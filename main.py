@@ -17,7 +17,7 @@ from environment import Environment
 # CONFIGURATION
 # ----------------------------------------------------------------------
 # Exports
-plot_results = False
+plot_results = True
 export_results = False
 animate = True
 
@@ -52,16 +52,16 @@ sensors = Sensors()
 # SETUP SYSTEMS
 # ----------------------------------------------------------------------
 # Motor 1: (+x, 0) - spins CCW
-m1 = Motor([ ARM_LENGTH, 0, 0], [0,0,1], -TORQUE_COEFF, MAX_THRUST_PER_MOTOR, MOTOR_LAG)
+m1 = Motor([ARM_LENGTH, 0, 0], [0,0,1], -TORQUE_COEFF, MAX_THRUST_PER_MOTOR, MOTOR_LAG)
 
 # Motor 2: (-x, 0) - spins CCW
 m2 = Motor([-ARM_LENGTH, 0, 0], [0,0,1],  -TORQUE_COEFF, MAX_THRUST_PER_MOTOR, MOTOR_LAG)
 
 # Motor 3: (0, +y) - spins CW
-m3 = Motor([0,  ARM_LENGTH, 0], [0,0,1], TORQUE_COEFF, MAX_THRUST_PER_MOTOR, MOTOR_LAG)
+m3 = Motor([0, ARM_LENGTH, 0], [0,0,1], TORQUE_COEFF, MAX_THRUST_PER_MOTOR, MOTOR_LAG)
 
 # Motor 4: (0, -y) - spins CW
-m4 = Motor([ 0,  -ARM_LENGTH, 0], [0,0,1],  TORQUE_COEFF, MAX_THRUST_PER_MOTOR, MOTOR_LAG)
+m4 = Motor([ 0, -ARM_LENGTH, 0], [0,0,1],  TORQUE_COEFF, MAX_THRUST_PER_MOTOR, MOTOR_LAG)
 
 prop_system = Propulsion([m1, m2, m3, m4])
 
@@ -70,14 +70,27 @@ vehicle = Vehicle(MASS, INERTIA, R_CG, R_CP_REF)
 
 # Initial state
 initial_state = State(
-    position   = [0.0, 0.0, 10.0],
-    velocity   = [0.0, 0.0, 0.0],
+    position   = [0.0, 0.0, 1.0],
+    velocity   = [-3.0, 4.0, 2.0],
     quaternion = [1.0, 0.0, 0.0, 0.0],
     omega      = [0.0, 0.0, 0.0]
 )
 
 # Flight computer
-fc = FlightComputer()
+attitude_kp = np.array([[1, 0, 0],
+                        [0, 1, 0],
+                        [0, 0, 0.01]])
+attitude_kd = np.array([[0.1, 0, 0],
+                        [0, 0.1, 0],
+                        [0, 0, 0.01]])
+pos_kp = np.array([[-3, 0, 0],
+                   [0, -3, 0],
+                   [0, 0, -20]])
+pos_kd = np.array([[-4, 0, 0],
+                   [0, -4, 0],
+                   [0, 0, -10]])
+
+fc = FlightComputer(attitude_kp, attitude_kd, pos_kp, pos_kd, ARM_LENGTH, TORQUE_COEFF, MASS)
 
 '''
 # For testing delete once flight computer control logic is implemented

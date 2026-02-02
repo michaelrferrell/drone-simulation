@@ -46,6 +46,18 @@ def quat_to_euler(row):
     
         return pd.Series([math.degrees(roll), math.degrees(pitch), math.degrees(yaw)])
     
+def quat_multiply(q1, q2):
+    w1, x1, y1, z1, w2, x2, y2, z2 = q1[0], q1[1], q1[2], q1[3], q2[0], q2[1], q2[2], q2[3]
+    output_quat = np.array([w1*w2-x1*x2-y1*y2-z1*z2, w1*x2+x1*w2+y1*z2-z1*y2, w1*y2-x1*z2+y1*w2+z1*x2, w1*z2+x1*y2-y1*x2+z1*x2])
+    return output_quat
+
+def quat_conjugate(q1):
+    output_quat = np.array([q1[0], -q1[1], -q1[2], -q1[3]])
+    return output_quat
+
+def split_quat(q1):
+    return q1[0], np.array([q1[1], q1[2], q1[3]])
+
 # get_orientation_vectors function
 # Calculates the Forward (X) and Right (Y) direction vectors from the current quaternion
 def get_orientation_vectors(row):
@@ -61,11 +73,16 @@ def get_orientation_vectors(row):
     vy_y = 1 - 2*(x**2 + z**2)
     vy_z = 2*(y*z + w*x)
     
-    return (vx_x, vx_y, vx_z), (vy_x, vy_y, vy_z)
+    # R * [0, 0, 1]^T (Right Vector Y)
+    vz_x = 2*(x*z + w*y)
+    vz_y = 2*(y*z - w*x)
+    vz_z = 1 - 2*x**2 - 2*y**2
+
+    return (vx_x, vx_y, vx_z), (vy_x, vy_y, vy_z), (vz_x, vz_y, vz_z)
 
 # update_animation_frame function
 # Updates the position of the lines and markers based on the current frame
-def update_animation_frame(frame, data, line, drone_body, arm_x, arm_y, arm_length):
+def update_animation_frame(frame, data, line, drone_body, arm_x, arm_y, arm_z, arm_length):
     # Current state
     current = data.iloc[frame]
     
@@ -79,7 +96,7 @@ def update_animation_frame(frame, data, line, drone_body, arm_x, arm_y, arm_leng
     drone_body.set_3d_properties([current['z']])
     
     # Update orientation arms
-    vec_x, vec_y = get_orientation_vectors(current)
+    vec_x, vec_y, vec_z = get_orientation_vectors(current)
     
     # Draw Forward X arm
     arm_x.set_data([current['x'], current['x'] + vec_x[0]*arm_length], 
@@ -90,8 +107,13 @@ def update_animation_frame(frame, data, line, drone_body, arm_x, arm_y, arm_leng
     arm_y.set_data([current['x'], current['x'] + vec_y[0]*arm_length], 
                    [current['y'], current['y'] + vec_y[1]*arm_length])
     arm_y.set_3d_properties([current['z'], current['z'] + vec_y[2]*arm_length])
+
+    # Draw Right Y arm
+    arm_z.set_data([current['x'], current['x'] + vec_z[0]*arm_length], 
+                   [current['y'], current['y'] + vec_z[1]*arm_length])
+    arm_z.set_3d_properties([current['z'], current['z'] + vec_z[2]*arm_length])
     
-    return line, drone_body, arm_x, arm_y
+    return line, drone_body, arm_x, arm_y, arm_z
 
 # ----------------------------------------------------------------------
 # Main utilities 
@@ -219,6 +241,7 @@ def animate_simulation_3d(df, target_trajectory=None, filename=None):
     # Setup figure
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection='3d')
+    ax.set_aspect('equal')
     
     margin = 1.0
     ax.set_xlim(data['x'].min()-margin, data['x'].max()+margin)
@@ -247,9 +270,10 @@ def animate_simulation_3d(df, target_trajectory=None, filename=None):
     drone_body, = ax.plot([], [], [], 'ko', markersize=5)
     arm_x, = ax.plot([], [], [], 'r-', linewidth=2) 
     arm_y, = ax.plot([], [], [], 'g-', linewidth=2) 
+    arm_z, = ax.plot([], [], [], 'b-', linewidth=2) 
 
     # Greate animation
-    update_func = partial(update_animation_frame, data=data, line=line, drone_body=drone_body, arm_x=arm_x, arm_y=arm_y, arm_length=0.5)
+    update_func = partial(update_animation_frame, data=data, line=line, drone_body=drone_body, arm_x=arm_x, arm_y=arm_y, arm_z=arm_z, arm_length=0.5)
     ani = animation.FuncAnimation(fig, update_func, frames=len(data), interval=30, blit=False)
     
     if filename:

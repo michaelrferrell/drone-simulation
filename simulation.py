@@ -44,8 +44,12 @@ class Simulation:
             sensor_readings = self.sensors.measure(self.state)
             
             # Think
-            # fc should have a function to get desired trajectory at time t which would then be passed into computer_motor_commands    
-            motor_commands = self.fc.compute_motor_commands(sensor_readings, 'Replace with desired state setpoint at time t', self.dt)
+            # replace with trajgen outputs
+            r_des = np.array([3.0, -2.0, 3.0])
+            v_des = np.array([0.0, 0.0, 0.0])
+            a_des = np.array([0.0, 0.0, 0.0])
+            target_quaternion = self.fc.compute_target_acceleration(sensor_readings, r_des, v_des, a_des)  # replace with r_des, v_des, a_des from trajectory
+            motor_commands = self.fc.compute_motor_commands(sensor_readings, target_quaternion, 90*np.pi/180, 0.1)
             
             # Act
             self.prop.update(motor_commands, self.dt)
