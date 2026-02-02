@@ -1,0 +1,164 @@
+# Attention default units are SI
+import numpy as np
+import pandas as pd
+
+class Simulation:
+    def __init__(self, duration, dt, vehicle, propulsion, flight_computer, sensors, state, dynamics, solver, environment, bounds):
+        # Simulation setup 
+        self.duration = duration
+        self.dt = dt
+        
+        # System blocks
+        self.vehicle = vehicle
+        self.prop = propulsion
+        self.fc = flight_computer
+        self.sensors = sensors
+        self.state = state
+        self.dynamics = dynamics
+        self.solver = solver
+        self.env = environment
+        
+        # Internal counters
+        self.time = 0.0
+        self.step_count = 0
+        
+        # Safety limits
+        self.bounds = bounds
+        self.ground_z = bounds.get('min_z', 0.0)
+        self.crash_velocity_threshold = -2.0  # (m/s)
+        
+        # Data logging container
+        self.history = []
+
+    # run function
+    # Executes the main simulation loop and returns the data log
+    def run(self):
+        # Calculate total steps
+        total_steps = int(self.duration / self.dt)
+        
+        print(f"Starting Simulation: {self.duration}s ({total_steps} steps)")
+        
+        for step in range(total_steps):
+            
+            # ─────────────────────────────────────────────────────────────────────────────
+            # Sense
+            # ─────────────────────────────────────────────────────────────────────────────
+            sensor_readings = self.sensors.measure(self.state)
+            
+            # ─────────────────────────────────────────────────────────────────────────────
+            # Think
+            # ─────────────────────────────────────────────────────────────────────────────
+            # fc should have a function to get desired trajectory at time t which would then be passed into computer_motor_commands    
+            motor_commands = self.fc.compute_motor_commands(sensor_readings, 'Replace with desired state setpoint at time t', self.dt)
+            
+            # ─────────────────────────────────────────────────────────────────────────────
+            # Act
+            # ─────────────────────────────────────────────────────────────────────────────
+            self.prop.update(motor_commands, self.dt)
+            
+            # ─────────────────────────────────────────────────────────────────────────────
+            # Evolve
+            # ─────────────────────────────────────────────────────────────────────────────
+            self.solver.step(self.state, self.vehicle, self.prop, self.dynamics, self.env, self.dt)
+            
+            # ─────────────────────────────────────────────────────────────────────────────
+            # Safety Check
+            # ─────────────────────────────────────────────────────────────────────────────
+            if self.check_safety_violation():
+                break
+            
+            # ─────────────────────────────────────────────────────────────────────────────
+            # Log
+            # ─────────────────────────────────────────────────────────────────────────────
+            self.log_step(motor_commands)
+            
+            # Advance time
+            self.time += self.dt
+            self.step_count += 1
+            
+        print("Simulation Complete.")
+        
+        # Return result as a Pandas DataFrame
+        return pd.DataFrame(self.history)
+
+    # log_step function
+    # Internal helper to pack current state into a dictionary
+    def log_step(self, motor_commands):
+        # Extract individual components for cleaner columns
+        pos = self.state.position
+        vel = self.state.velocity
+        quat = self.state.quaternion
+        omega = self.state.omega
+        
+        # We also want to log the actual thrust produced by motors
+        actual_thrusts = [m.current_thrust for m in self.prop.prop_devices]
+        
+        log_entry = {
+            'time': self.time,
+            
+            # Position
+            'x': pos[0], 'y': pos[1], 'z': pos[2],
+            
+            # Velocity
+            'vx': vel[0], 'vy': vel[1], 'vz': vel[2],
+            
+            # Orientation (Quaternion)
+            'qw': quat[0], 'qx': quat[1], 'qy': quat[2], 'qz': quat[3],
+            
+            # Angular Velocity
+            'p': omega[0], 'q': omega[1], 'r': omega[2],
+            
+            # Commands (Inputs)
+            'cmd_m1': motor_commands[0],
+            'cmd_m2': motor_commands[1],
+            'cmd_m3': motor_commands[2],
+            'cmd_m4': motor_commands[3],
+            
+            # Actual Thrust (Actuators)
+            'thrust_m1': actual_thrusts[0],
+            'thrust_m2': actual_thrusts[1],
+            'thrust_m3': actual_thrusts[2],
+            'thrust_m4': actual_thrusts[3]
+        }
+        
+        self.history.append(log_entry)
+        
+    # check_safety_violation function
+    # Checks if that state has violated physical boundaries
+    def check_safety_violation(self):
+        # Geofence check
+        dist = np.linalg.norm(self.state.position)
+        if dist > self.bounds['max_dist']:
+            print(f"!!! FAIL: Drone left simulation area (Dist={dist:.1f}m) !!!")
+            return True
+
+        # Ground interaction check
+        if self.state.position[2] < self.ground_z:
+            current_vz = self.state.velocity[2]
+            
+            # Hard impact case
+            if current_vz < self.crash_velocity_threshold:
+                print(f"!!! CRASH: Hit ground at {current_vz:.2f} m/s !!!")
+                self.log_step([0,0,0,0]) # Log the impact
+                return True # stop simulation
+            
+            # Soft landing case
+            else:
+                # Clamp position (Don't fall through floor)
+                self.state.position[2] = self.ground_z
+                
+                # Zero out downward velocity (Floor stops us) but allow upward velocity if we are taking off
+                if self.state.velocity[2] < 0:
+                     self.state.velocity[2] = 0.0
+                     
+                     # Friction slows lateral movement
+                     self.state.velocity[0] *= 0.95 
+                     self.state.velocity[1] *= 0.95
+                     
+                     # Kill rotation if on ground (prevent tipping)
+                     self.state.omega *= 0.9
+                
+                # The sim continues (drone is just sitting)
+                return False
+
+        return False
