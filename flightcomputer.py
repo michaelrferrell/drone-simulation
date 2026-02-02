@@ -18,7 +18,7 @@ class FlightComputer:
     # Takes sensor readings and user input, outputs raw commands for motors
     def compute_motor_commands(self, sensor_readings, target_acceleration, max_tilt_angle, min_throttle):     
         # Unpack sensor data (process variables)
-        quat__fc = sensor_readings['quaternion']   # [w, x, y, z] body->inertial
+        quat_fc = sensor_readings['quaternion']   # [w, x, y, z] body->inertial
         omega_fc = sensor_readings['omega']       # [p, q, r] body rate
 
 
@@ -26,25 +26,20 @@ class FlightComputer:
         quatAxisAngleRotAngle = np.arccos(np.dot(np.array([0, 0, 1]), target_acceleration)/np.linalg.norm(target_acceleration))
         quatAxisAngleRotAngle = min(quatAxisAngleRotAngle, max_tilt_angle)
         target_quaternion = np.array([np.cos(quatAxisAngleRotAngle/2), quatAxisAngleRotVec[0]*np.sin(quatAxisAngleRotAngle/2), quatAxisAngleRotVec[1]*np.sin(quatAxisAngleRotAngle/2), quatAxisAngleRotVec[2]*np.sin(quatAxisAngleRotAngle/2)])
-        
-        error_quat = quat_multiply(quat_conjugate(target_quaternion), quat__fc)
+        error_quat = quat_multiply(quat_conjugate(target_quaternion), quat_fc)
         error_quat_scalar, error_quat_vector = split_quat(error_quat)
+
         tau_des = -error_quat_scalar*self.attitude_kp@error_quat_vector - self.attitude_kd@omega_fc
-        # if target_acceleration[2] < 0:
-        #     thrust_des = 0
-        # else:
         thrust_des = self.mass*np.linalg.norm(target_acceleration)
-        print((target_acceleration))
+
         mapping_matrix = np.array([[1, 1, 1, 1],
                                    [0, 0, self.arm_length, -self.arm_length],
                                    [-self.arm_length, self.arm_length, 0, 0],
                                    [-self.torque_coeff, -self.torque_coeff, self.torque_coeff, self.torque_coeff]])
 
-        # print(tau_des)
         
         m1_cmd, m2_cmd, m3_cmd, m4_cmd = np.linalg.inv(mapping_matrix)@np.array([thrust_des, tau_des[0], tau_des[1], tau_des[2]]).T
 
-        print(m1_cmd, m2_cmd, m3_cmd, m4_cmd)
         # m1_cmd = thrust_des / 4.0
         # m2_cmd = thrust_des / 4.0
         # m3_cmd = thrust_des / 4.0
