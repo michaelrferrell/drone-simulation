@@ -235,7 +235,7 @@ def animate_simulation_3d(df, target_trajectory=None, filename=None):
     xx, yy = np.meshgrid(np.linspace(ax.get_xlim()[0], ax.get_xlim()[1], 10), np.linspace(ax.get_ylim()[0], ax.get_ylim()[1], 10))
     ax.plot_surface(xx, yy, xx*0, color='gray', alpha=0.2)
     
-    # Target Path
+    # Target path
     if target_trajectory is not None:
         '''
         tx, ty, tz = target_trajectory[:,0], target_trajectory[:,1], target_trajectory[:,2]

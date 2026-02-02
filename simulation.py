@@ -40,36 +40,24 @@ class Simulation:
         
         for step in range(total_steps):
             
-            # ─────────────────────────────────────────────────────────────────────────────
             # Sense
-            # ─────────────────────────────────────────────────────────────────────────────
             sensor_readings = self.sensors.measure(self.state)
             
-            # ─────────────────────────────────────────────────────────────────────────────
             # Think
-            # ─────────────────────────────────────────────────────────────────────────────
             # fc should have a function to get desired trajectory at time t which would then be passed into computer_motor_commands    
             motor_commands = self.fc.compute_motor_commands(sensor_readings, 'Replace with desired state setpoint at time t', self.dt)
             
-            # ─────────────────────────────────────────────────────────────────────────────
             # Act
-            # ─────────────────────────────────────────────────────────────────────────────
             self.prop.update(motor_commands, self.dt)
             
-            # ─────────────────────────────────────────────────────────────────────────────
             # Evolve
-            # ─────────────────────────────────────────────────────────────────────────────
             self.solver.step(self.state, self.vehicle, self.prop, self.dynamics, self.env, self.dt)
             
-            # ─────────────────────────────────────────────────────────────────────────────
-            # Safety Check
-            # ─────────────────────────────────────────────────────────────────────────────
+            # Safety check
             if self.check_safety_violation():
                 break
             
-            # ─────────────────────────────────────────────────────────────────────────────
             # Log
-            # ─────────────────────────────────────────────────────────────────────────────
             self.log_step(motor_commands)
             
             # Advance time
@@ -78,7 +66,7 @@ class Simulation:
             
         print("Simulation Complete.")
         
-        # Return result as a Pandas DataFrame
+        # Return results
         return pd.DataFrame(self.history)
 
     # log_step function
@@ -90,7 +78,6 @@ class Simulation:
         quat = self.state.quaternion
         omega = self.state.omega
         
-        # We also want to log the actual thrust produced by motors
         actual_thrusts = [m.current_thrust for m in self.prop.prop_devices]
         
         log_entry = {
@@ -144,10 +131,10 @@ class Simulation:
             
             # Soft landing case
             else:
-                # Clamp position (Don't fall through floor)
+                # Clamp position
                 self.state.position[2] = self.ground_z
                 
-                # Zero out downward velocity (Floor stops us) but allow upward velocity if we are taking off
+                # Zero out downward velocity
                 if self.state.velocity[2] < 0:
                      self.state.velocity[2] = 0.0
                      
