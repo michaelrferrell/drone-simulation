@@ -82,13 +82,6 @@ fc = FlightComputer()
 '''
 # For testing delete once flight computer control logic is implemented
 '''
-hover_cmd = (MASS * env.g) / 4.0
-def simple_hover_controller(sensor_data, target, dt):
-    thrust = hover_cmd * 1.05 
-    return [thrust, thrust, thrust, thrust]
-
-fc.compute_motor_commands = simple_hover_controller
-
 # ----------------------------------------------------------------------
 # RUN SIMULATION
 # ----------------------------------------------------------------------
