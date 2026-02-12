@@ -73,7 +73,7 @@ initial_state = State(
     position   = [0.0, 0.0, 1.0],
     velocity   = [-3.0, 4.0, 2.0],
     quaternion = [1.0, 0.0, 0.0, 0.0],
-    omega      = [2.0, 2.0, 2.0]
+    omega      = [0.0, 0.0, 0.0]
 )
 
 # Flight computer
