@@ -39,10 +39,20 @@ class Simulation:
         print(f"Starting Simulation: {self.duration}s ({total_steps} steps)")
         
         for step in range(total_steps):
+    
+            if step == 0: #UGLY, FIX
+                motor_commands = np.array([0.0, 0.0, 0.0, 0.0])
+            # Act
+            self.prop.update(motor_commands, self.dt)
             
+            # Evolve
+            derivatives = self.solver.step(self.state, self.vehicle, self.prop, self.dynamics, self.env, self.dt)
+
             # Sense
-            sensor_readings = self.sensors.measure(self.state)
-            
+            omega = self.state.omega
+            accel = derivatives[0]
+            sensor_readings = self.sensors.measure(omega, accel, self.dt)
+            print(self.sensors.pos - self.state.position)
             # Think
             # replace with trajgen outputs
             r_des = np.array([3.0, -2.0, 3.0])
@@ -51,12 +61,8 @@ class Simulation:
             target_quaternion = self.fc.compute_target_acceleration(sensor_readings, r_des, v_des, a_des)  # replace with r_des, v_des, a_des from trajectory
             motor_commands = self.fc.compute_motor_commands(sensor_readings, target_quaternion, 90*np.pi/180, 0.1)
             
-            # Act
-            self.prop.update(motor_commands, self.dt)
-            
-            # Evolve
-            self.solver.step(self.state, self.vehicle, self.prop, self.dynamics, self.env, self.dt)
-            
+
+
             # Safety check
             if self.check_safety_violation():
                 break

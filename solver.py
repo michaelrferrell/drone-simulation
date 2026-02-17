@@ -39,3 +39,4 @@ class RK4:
             
         # Apply final integration to the real state
         state.integrate(final_derivatives, dt)
+        return final_derivatives
