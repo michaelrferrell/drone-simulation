@@ -52,7 +52,6 @@ class Simulation:
             omega = self.state.omega
             accel = derivatives[0]
             sensor_readings = self.sensors.measure(self.state.copy(), omega, accel, self.dt)
-            print(self.sensors.pos - self.state.position)
             # Think
             # replace with trajgen outputs
             r_des = np.array([3.0, -2.0, 3.0])
