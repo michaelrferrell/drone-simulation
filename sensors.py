@@ -15,25 +15,28 @@ class Sensors:
         
     # measure function
     # Takes the true physical state and simulates sensor readings
-    def measure(self, omega, accel, dt):
+    def measure(self, true_state, omega, accel, dt):
         # GPS / motion capture (position)
-        self.accel = accel + np.random.uniform(-1, 1)
-        self.omega = omega + np.random.uniform(-5*np.pi/180, 5*np.pi/180)
+        self.accel = accel + np.random.normal(-1, 1)
+        self.omega = omega + np.random.normal(-5*np.pi/180, 5*np.pi/180)
+        self.pos = true_state.position + np.random.normal(-0.05, 0.05)
+        self.vel = true_state.velocity + np.random.normal(-0.05, 0.05)
+        self.quat = true_state.quaternion
 
-        self.vel += self.accel*dt
-        self.pos += self.vel*dt
+        # self.vel += self.accel*dt
+        # self.pos += self.vel*dt
         
         # Attitude reference system (orientation)
-        quat = self.quat
-        p, q, r = self.omega
-        dq_dt = 0.5 * np.array([
-            -quat[1]*p - quat[2]*q - quat[3]*r,
-            quat[0]*p + quat[2]*r - quat[3]*q,
-            quat[0]*q - quat[1]*r + quat[3]*p,
-            quat[0]*r + quat[1]*q - quat[2]*p
-        ])
-        self.quat += dq_dt*dt
-        self.quat = self.quat/np.linalg.norm(self.quat)
+        # quat = self.quat
+        # p, q, r = self.omega
+        # dq_dt = 0.5 * np.array([
+        #     -quat[1]*p - quat[2]*q - quat[3]*r,
+        #     quat[0]*p + quat[2]*r - quat[3]*q,
+        #     quat[0]*q - quat[1]*r + quat[3]*p,
+        #     quat[0]*r + quat[1]*q - quat[2]*p
+        # ])
+        # self.quat += dq_dt*dt
+        # self.quat = self.quat/np.linalg.norm(self.quat)
 
 
         # Gyroscope (angular velocity)
