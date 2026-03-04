@@ -52,6 +52,7 @@ class Simulation:
             omega = self.state.omega
             accel = derivatives[0]
             sensor_readings = self.sensors.measure(self.state.copy(), omega, accel, self.dt)
+            
             # Think
             # replace with trajgen outputs
             r_des = np.array([5.0, 5.0, 5.0])
@@ -60,8 +61,6 @@ class Simulation:
             target_quaternion = self.fc.compute_target_acceleration(sensor_readings, r_des, v_des, a_des)  # replace with r_des, v_des, a_des from trajectory
             motor_commands = self.fc.compute_motor_commands(sensor_readings, target_quaternion, 90*np.pi/180, 0.1)
             
-
-
             # Safety check
             if self.check_safety_violation():
                 break

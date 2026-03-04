@@ -50,6 +50,8 @@ class FlightComputer:
         
         return commands
 
+    # compute_target_acceleration function
+    # Returns target acceleration for desired position and velocity
     def compute_target_acceleration(self, sensor_readings, r_des, v_des, a_des):
         # Unpack sensor data (process variables)
         r_fc = sensor_readings['position']      # [x, y, z] inertial
