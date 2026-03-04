@@ -40,11 +40,6 @@ class FlightComputer:
         
         m1_cmd, m2_cmd, m3_cmd, m4_cmd = np.linalg.inv(mapping_matrix)@np.array([thrust_des, tau_des[0], tau_des[1], tau_des[2]]).T
 
-        # m1_cmd = thrust_des / 4.0
-        # m2_cmd = thrust_des / 4.0
-        # m3_cmd = thrust_des / 4.0
-        # m4_cmd = thrust_des / 4.0
-
         # Formatting
         commands = [
             max(0.0, m1_cmd),

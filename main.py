@@ -71,9 +71,9 @@ vehicle = Vehicle(MASS, INERTIA, R_CG, R_CP_REF)
 # Initial state
 initial_state = State(
     position   = [0.0, 0.0, 1.0],
-    velocity   = [-3.0, 4.0, 2.0],
+    velocity   = [0.0, 0.0, 0.0],
     quaternion = [1.0, 0.0, 0.0, 0.0],
-    omega      = [2.0, 2.0, 2.0]
+    omega      = [0.0, 0.0, 0.0]
 )
 
 # Flight computer
@@ -92,9 +92,6 @@ pos_kd = np.array([[-4, 0, 0],
 
 fc = FlightComputer(attitude_kp, attitude_kd, pos_kp, pos_kd, ARM_LENGTH, TORQUE_COEFF, MASS)
 
-'''
-# For testing delete once flight computer control logic is implemented
-'''
 # ----------------------------------------------------------------------
 # RUN SIMULATION
 # ----------------------------------------------------------------------

@@ -45,7 +45,7 @@ class Simulation:
             
             # Think
             # replace with trajgen outputs
-            r_des = np.array([3.0, -2.0, 3.0])
+            r_des = np.array([5.0, 5.0, 5.0])
             v_des = np.array([0.0, 0.0, 0.0])
             a_des = np.array([0.0, 0.0, 0.0])
             target_quaternion = self.fc.compute_target_acceleration(sensor_readings, r_des, v_des, a_des)  # replace with r_des, v_des, a_des from trajectory
