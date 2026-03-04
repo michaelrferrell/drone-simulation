@@ -31,13 +31,6 @@ class State:
     # integrate function
     # Updates the state using Euler integration and ensures quaternion validity
     def integrate(self, derivatives, dt):
-        """
-        Updates:
-        1. position += velocity * dt
-        2. velocity += linear_accel * dt
-        3. quaternion += q_dot * dt (Includes Normalization)
-        4. omega += angular_accel * dt
-        """
         accel_linear, accel_angular, dq_dt = derivatives
 
         # Update velocity
@@ -45,8 +38,6 @@ class State:
 
         # Update position
         self.position += self.velocity * dt
-
-
 
         # Update orientation (quaternion)
         self.quaternion += dq_dt * dt

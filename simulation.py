@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 class Simulation:
-    def __init__(self, duration, dt, vehicle, propulsion, flight_computer, sensors, state, dynamics, solver, environment, bounds):
+    def __init__(self, duration, dt, vehicle, propulsion, flight_computer, sensors, state, dynamics, solver, environment, payload, bounds):
         # Simulation setup 
         self.duration = duration
         self.dt = dt
@@ -17,6 +17,7 @@ class Simulation:
         self.dynamics = dynamics
         self.solver = solver
         self.env = environment
+        self.payload = payload
         
         # Internal counters
         self.time = 0.0
@@ -38,15 +39,33 @@ class Simulation:
         
         print(f"Starting Simulation: {self.duration}s ({total_steps} steps)")
         
+        # Pre-Loop initialization (t=0)
+        # Sense
+        omega = self.state.omega
+        accel = np.array([0.0, 0.0, 0.0]) # Initial acceleration at rest
+        sensor_readings = self.sensors.measure(self.state.copy(), omega, accel, self.dt)
+        
+        # Think
+        target_quaternion = self.fc.compute_target_acceleration(sensor_readings, self.fc.r_des, self.fc.v_des, self.fc.a_des)  # replace with r_des, v_des, a_des from trajectory
+        motor_commands = self.fc.compute_motor_commands(sensor_readings, target_quaternion, 90*np.pi/180, 0.1)
+        payload_command = self.fc.process_payload_deployment(sensor_readings, self.fc.r_des, self.fc.payload_threshold, self.fc.payload_mass)
+        
+        # Log initial state at t=0
+        self.log_step(motor_commands)
+        
+        # Main simulation loop
         for step in range(total_steps):
-    
-            if step == 0: #UGLY, FIX
-                motor_commands = np.array([0.0, 0.0, 0.0, 0.0])
             # Act
             self.prop.update(motor_commands, self.dt)
+            if payload_command == "DEPLOY":
+                self.vehicle.update_mass(-self.payload.mass)
             
             # Evolve
             derivatives = self.solver.step(self.state, self.vehicle, self.prop, self.dynamics, self.env, self.dt)
+            
+            # Advance time (t + dt)
+            self.time += self.dt
+            self.step_count += 1
 
             # Sense
             omega = self.state.omega
@@ -54,12 +73,9 @@ class Simulation:
             sensor_readings = self.sensors.measure(self.state.copy(), omega, accel, self.dt)
             
             # Think
-            # replace with trajgen outputs
-            r_des = np.array([5.0, 5.0, 5.0])
-            v_des = np.array([0.0, 0.0, 0.0])
-            a_des = np.array([0.0, 0.0, 0.0])
-            target_quaternion = self.fc.compute_target_acceleration(sensor_readings, r_des, v_des, a_des)  # replace with r_des, v_des, a_des from trajectory
+            target_quaternion = self.fc.compute_target_acceleration(sensor_readings, self.fc.r_des, self.fc.v_des, self.fc.a_des)  # replace with r_des, v_des, a_des from trajectory
             motor_commands = self.fc.compute_motor_commands(sensor_readings, target_quaternion, 90*np.pi/180, 0.1)
+            payload_command = self.fc.process_payload_deployment(sensor_readings, self.fc.r_des, self.fc.payload_threshold, self.fc.payload_mass)
             
             # Safety check
             if self.check_safety_violation():
@@ -67,10 +83,6 @@ class Simulation:
             
             # Log
             self.log_step(motor_commands)
-            
-            # Advance time
-            self.time += self.dt
-            self.step_count += 1
             
         print("Simulation Complete.")
         
@@ -85,6 +97,7 @@ class Simulation:
         vel = self.state.velocity
         quat = self.state.quaternion
         omega = self.state.omega
+        mass = self.vehicle.mass
         
         actual_thrusts = [m.current_thrust for m in self.prop.prop_devices]
         
@@ -97,23 +110,26 @@ class Simulation:
             # Velocity
             'vx': vel[0], 'vy': vel[1], 'vz': vel[2],
             
-            # Orientation (Quaternion)
+            # Orientation (quaternion)
             'qw': quat[0], 'qx': quat[1], 'qy': quat[2], 'qz': quat[3],
             
-            # Angular Velocity
+            # Angular velocity
             'p': omega[0], 'q': omega[1], 'r': omega[2],
             
-            # Commands (Inputs)
+            # Commands (inputs)
             'cmd_m1': motor_commands[0],
             'cmd_m2': motor_commands[1],
             'cmd_m3': motor_commands[2],
             'cmd_m4': motor_commands[3],
             
-            # Actual Thrust (Actuators)
+            # Actual thrust (actuators)
             'thrust_m1': actual_thrusts[0],
             'thrust_m2': actual_thrusts[1],
             'thrust_m3': actual_thrusts[2],
-            'thrust_m4': actual_thrusts[3]
+            'thrust_m4': actual_thrusts[3],
+            
+            # Vehicle mass
+            'mass': mass
         }
         
         self.history.append(log_entry)

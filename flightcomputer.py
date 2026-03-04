@@ -4,15 +4,25 @@ from utils import quat_multiply, quat_conjugate, split_quat
 from conversions_constants import *
 
 class FlightComputer:
-    def __init__(self, attitude_kp, attitude_kd, pos_kp, pos_kd, arm_length, torque_coeff, mass):
-        # Store gains and internal state for tracking of inegral error and last error here
+    def __init__(self, attitude_kp, attitude_kd, pos_kp, pos_kd, r_des, v_des, a_des, arm_length, torque_coeff, mass, payload_mass, payload_threshold):
+        # Gains
         self.attitude_kp = attitude_kp
         self.attitude_kd = attitude_kd
         self.pos_kp = pos_kp
         self.pos_kd = pos_kd
+        
+        # Desired states
+        self.r_des= r_des
+        self.v_des = v_des
+        self.a_des = a_des
+        
+        # Vehicle information
         self.arm_length = arm_length
         self.torque_coeff = torque_coeff
         self.mass = mass
+        self.payload_mass = payload_mass
+        self.payload_threshold = payload_threshold
+        self.deployed_payload = False
 
     # compute_motor_commands function
     # Takes sensor readings and user input, outputs raw commands for motors
@@ -65,3 +75,17 @@ class FlightComputer:
         if np.linalg.norm(target_acceleration) > 2*STANDARD_GRAVITY:
             target_acceleration = target_acceleration/np.linalg.norm(target_acceleration)*20
         return target_acceleration
+    
+    # process_payload_deployment function
+    # Checks if target target payload deployment location is reached
+    def process_payload_deployment(self, sensor_readings, r_des, threshold, payload_mass):
+        r_fc = sensor_readings['position']      # [x, y, z] inertial
+        r_error = r_des - r_fc
+        distance = np.linalg.norm(r_error)
+        
+        if distance < threshold and self.deployed_payload == False:
+            self.deployed_payload = True
+            self.mass = self.mass - payload_mass
+            return "DEPLOY"
+        else:
+            return "SAFE"

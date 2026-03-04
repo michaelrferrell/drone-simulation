@@ -32,4 +32,7 @@ class Vehicle:
     def get_properties(self):
         return self.mass, self.inertia_matrix, self.inertia_inv, self.r_cg
     
-    # To-Do: Add ability to update mass (using propellant) and dynamically recalculate center properties         
+    # update_mass function
+    # Updates mass of vehicle
+    def update_mass(self, delta_m):
+        self.mass += delta_m         

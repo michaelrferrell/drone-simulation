@@ -9,7 +9,7 @@ class Propulsion:
     # update function
     # Updates the internal state (lag) of all propulsion devices
     def update(self, commands, dt):
-        # Ensure we have enough commands for devices
+        # Ensure there are enough commands for devices
         if len(commands) != len(self.prop_devices):
             raise ValueError(f"Expected {len(self.prop_devices)} commands, got {len(commands)}")
 

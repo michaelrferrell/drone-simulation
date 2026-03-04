@@ -12,6 +12,7 @@ from sensors import Sensors
 from dynamics import Dynamics
 from solver import RK4
 from environment import Environment
+from payload import Payload
 
 # ----------------------------------------------------------------------
 # CONFIGURATION
@@ -19,14 +20,16 @@ from environment import Environment
 # Exports
 plot_results = True
 animate = True
-export_results = False
+export_results = True
 
 # Time
 DURATION = 10.0
 DT       = 0.01
 
 # Physical properties
-MASS = 0.9 # Total mass of vehicle (including motors)
+PAYLOAD_MASS = 0.05
+VEHICLE_MASS = 0.9
+MASS = VEHICLE_MASS + PAYLOAD_MASS # Total mass of vehicle (including motors)
 R_CG = [0.0, 0.0, 0.0] # Relative to body frame origin
 R_CP_REF = [0.0, 0.0, 0.0] # Relative to body frame origin
 ARM_LENGTH = 0.1
@@ -76,6 +79,9 @@ initial_state = State(
 )
 
 # Flight computer
+r_des = np.array([5.0, 5.0, 5.0]) 
+v_des = np.array([0.0, 0.0, 0.0])
+a_des = np.array([0.0, 0.0, 0.0])
 attitude_kp = np.array([[1, 0, 0],
                         [0, 1, 0],
                         [0, 0, 0.01]])
@@ -89,9 +95,13 @@ pos_kd = np.array([[-4, 0, 0],
                    [0, -4, 0],
                    [0, 0, -10]])
 
-fc = FlightComputer(attitude_kp, attitude_kd, pos_kp, pos_kd, ARM_LENGTH, TORQUE_COEFF, MASS)
+fc = FlightComputer(attitude_kp, attitude_kd, pos_kp, pos_kd, r_des, v_des, a_des, ARM_LENGTH, TORQUE_COEFF, MASS, PAYLOAD_MASS, 0.1)
+
+# Sensors
 sensors = Sensors(initial_state.copy())
 
+# Payload
+payload = Payload(PAYLOAD_MASS)
 
 # ----------------------------------------------------------------------
 # RUN SIMULATION
@@ -112,6 +122,7 @@ sim = Simulation(
     dynamics=dyn,
     solver=rk4,
     environment=env,
+    payload=payload,
     bounds=safety_bounds
 )
 
@@ -132,7 +143,7 @@ if export_results:
         "initial_pos": initial_state.position
     }
 
-    export_simulation_data(df, sim_metadata)
+    export_simulation_data(df, sim_metadata, r"C:\Users\micha\OneDrive\Desktop\Drone Stuff")
     
 # ----------------------------------------------------------------------
 # PLOT DATA
