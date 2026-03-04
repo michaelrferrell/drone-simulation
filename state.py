@@ -40,11 +40,13 @@ class State:
         """
         accel_linear, accel_angular, dq_dt = derivatives
 
+        # Update velocity
+        self.velocity += accel_linear * dt
+
         # Update position
         self.position += self.velocity * dt
 
-        # Update velocity
-        self.velocity += accel_linear * dt
+
 
         # Update orientation (quaternion)
         self.quaternion += dq_dt * dt

@@ -18,8 +18,8 @@ from environment import Environment
 # ----------------------------------------------------------------------
 # Exports
 plot_results = True
-export_results = False
 animate = True
+export_results = False
 
 # Time
 DURATION = 10.0
@@ -46,7 +46,6 @@ MOTOR_LAG            = 0.05
 env = Environment()
 dyn = Dynamics()
 rk4 = RK4()
-sensors = Sensors()
 
 # ----------------------------------------------------------------------
 # SETUP SYSTEMS
@@ -91,6 +90,8 @@ pos_kd = np.array([[-4, 0, 0],
                    [0, 0, -10]])
 
 fc = FlightComputer(attitude_kp, attitude_kd, pos_kp, pos_kd, ARM_LENGTH, TORQUE_COEFF, MASS)
+sensors = Sensors(initial_state.copy())
+
 
 # ----------------------------------------------------------------------
 # RUN SIMULATION

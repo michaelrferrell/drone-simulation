@@ -22,7 +22,7 @@ class FlightComputer:
         omega_fc = sensor_readings['omega']       # [p, q, r] body rate
 
 
-        quatAxisAngleRotVec = np.cross(np.array([0, 0, 1]), target_acceleration)/np.linalg.norm(target_acceleration)
+        quatAxisAngleRotVec = np.cross(np.array([0, 0, 1]), target_acceleration)/np.linalg.norm(np.cross(np.array([0, 0, 1]), target_acceleration))
         quatAxisAngleRotAngle = np.arccos(np.dot(np.array([0, 0, 1]), target_acceleration)/np.linalg.norm(target_acceleration))
         quatAxisAngleRotAngle = min(quatAxisAngleRotAngle, max_tilt_angle)
         target_quaternion = np.array([np.cos(quatAxisAngleRotAngle/2), quatAxisAngleRotVec[0]*np.sin(quatAxisAngleRotAngle/2), quatAxisAngleRotVec[1]*np.sin(quatAxisAngleRotAngle/2), quatAxisAngleRotVec[2]*np.sin(quatAxisAngleRotAngle/2)])
