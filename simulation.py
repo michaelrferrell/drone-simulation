@@ -45,10 +45,9 @@ class Simulation:
         accel = np.array([0.0, 0.0, 0.0]) # Initial acceleration at rest
         sensor_readings = self.sensors.measure(self.state.copy(), omega, accel, self.dt)
         
-        # Think
-        target_quaternion = self.fc.compute_target_acceleration(sensor_readings, self.fc.r_des, self.fc.v_des, self.fc.a_des)  # replace with r_des, v_des, a_des from trajectory
-        motor_commands = self.fc.compute_motor_commands(sensor_readings, target_quaternion, 90*np.pi/180, 0.1)
-        payload_command = self.fc.process_payload_deployment(sensor_readings, self.fc.r_des, self.fc.payload_threshold, self.fc.payload_mass)
+        target_acceleration = self.fc.compute_target_acceleration(sensor_readings, self.fc.r_start, np.array([0.0, 0.0, 0.0]), np.array([0.0, 0.0, 0.0]))  # replace with r_des, v_des, a_des from trajectory
+        motor_commands = self.fc.compute_motor_commands(sensor_readings, target_acceleration, 90*np.pi/180, 0.1)
+        payload_command = self.fc.process_payload_deployment(sensor_readings, self.fc.r_end, self.fc.payload_threshold, self.fc.payload_mass)
         
         # Log initial state at t=0
         self.log_step(motor_commands)
@@ -73,16 +72,30 @@ class Simulation:
             sensor_readings = self.sensors.measure(self.state.copy(), omega, accel, self.dt)
             
             # Think
-            target_quaternion = self.fc.compute_target_acceleration(sensor_readings, self.fc.r_des, self.fc.v_des, self.fc.a_des)  # replace with r_des, v_des, a_des from trajectory
-            motor_commands = self.fc.compute_motor_commands(sensor_readings, target_quaternion, 90*np.pi/180, 0.1)
-            payload_command = self.fc.process_payload_deployment(sensor_readings, self.fc.r_des, self.fc.payload_threshold, self.fc.payload_mass)
+            t_f = 3.0
+            # print(self.fc.r_start - self.state.position)
+            if self.time < t_f:
+                r_des, v_des, a_des = self.fc.compute_desired_trajectory(self.time, t_f)
+            elif self.time > t_f + 5.0:
+                r_des = np.array([0, 0, 2.0])
+                v_des = np.array([0, 0, 0])
+                a_des = np.array([0, 0, 0])
+            # r_des = np.array([3*np.sin(self.time), 3*np.cos(self.time), 5.0])
+            # v_des = np.array([3*np.cos(self.time), -3*np.sin(self.time), 0.0])
+            # a_des = np.array([0.0, 0.0, 0.0])
+    
+            target_acceleration = self.fc.compute_target_acceleration(sensor_readings, r_des, v_des, a_des)  # replace with r_des, v_des, a_des from trajectory
+            motor_commands = self.fc.compute_motor_commands(sensor_readings, target_acceleration, 90*np.pi/180, 0.1)
+
+
+            payload_command = self.fc.process_payload_deployment(sensor_readings, self.fc.r_end, self.fc.payload_threshold, self.fc.payload_mass)
             
             # Safety check
             if self.check_safety_violation():
                 break
             
             # Log
-            self.log_step(motor_commands)
+            self.log_step(motor_commands, r_des=r_des)
             
         print("Simulation Complete.")
         
@@ -91,13 +104,18 @@ class Simulation:
 
     # log_step function
     # Internal helper to pack current state into a dictionary
-    def log_step(self, motor_commands):
+    def log_step(self, motor_commands, r_des=None):
         # Extract individual components for cleaner columns
         pos = self.state.position
         vel = self.state.velocity
         quat = self.state.quaternion
         omega = self.state.omega
         mass = self.vehicle.mass
+
+        if r_des is not None:
+            traj = r_des
+        else:
+            traj = np.array([0, 0, 0])
         
         actual_thrusts = [m.current_thrust for m in self.prop.prop_devices]
         
@@ -129,7 +147,11 @@ class Simulation:
             'thrust_m4': actual_thrusts[3],
             
             # Vehicle mass
-            'mass': mass
+            'mass': mass,
+
+            # Trajectory
+            'x_des': traj[0], 'y_des': traj[1], 'z_des': traj[2],
+                
         }
         
         self.history.append(log_entry)

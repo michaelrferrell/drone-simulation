@@ -172,9 +172,9 @@ def plot_simulation_results(df, max_thrust_limit=None):
     axs[0, 0].plot(df['time'], df['x'], label='X')
     axs[0, 0].plot(df['time'], df['y'], label='Y')
     axs[0, 0].plot(df['time'], df['z'], label='Z', linewidth=2)
-    axs[0, 0].set_title('Position (Inertial)')
-    axs[0, 0].set_ylabel('Meters')
-    axs[0, 0].set_xlabel('Time (s)')
+    axs[0, 0].set_title('Position (Inertial)', fontsize='small')
+    axs[0, 0].set_ylabel('Meters', fontsize='small')
+    axs[0, 0].set_xlabel('Time (s)', fontsize='small')
     axs[0, 0].grid(True)
     axs[0, 0].legend()
     
@@ -182,9 +182,9 @@ def plot_simulation_results(df, max_thrust_limit=None):
     axs[0, 1].plot(df['time'], df['vx'], label='Vx')
     axs[0, 1].plot(df['time'], df['vy'], label='Vy')
     axs[0, 1].plot(df['time'], df['vz'], label='Vz')
-    axs[0, 1].set_title('Velocity (Inertial)')
-    axs[0, 1].set_ylabel('m/s')
-    axs[0, 1].set_xlabel('Time (s)')
+    axs[0, 1].set_title('Velocity (Inertial)', fontsize='small')
+    axs[0, 1].set_ylabel('m/s', fontsize='small')
+    axs[0, 1].set_xlabel('Time (s)', fontsize='small')
     axs[0, 1].grid(True)
     axs[0, 1].legend()
     
@@ -192,9 +192,9 @@ def plot_simulation_results(df, max_thrust_limit=None):
     axs[1, 0].plot(df['time'], df['roll'], label='Roll')
     axs[1, 0].plot(df['time'], df['pitch'], label='Pitch')
     axs[1, 0].plot(df['time'], df['yaw'], label='Yaw')
-    axs[1, 0].set_title('Attitude (Euler Angles)')
-    axs[1, 0].set_ylabel('Degrees')
-    axs[1, 0].set_xlabel('Time (s)')
+    axs[1, 0].set_title('Attitude (Euler Angles)', fontsize='small')
+    axs[1, 0].set_ylabel('Degrees', fontsize='small')
+    axs[1, 0].set_xlabel('Time (s)', fontsize='small')
     axs[1, 0].grid(True)
     axs[1, 0].legend()
     
@@ -202,9 +202,9 @@ def plot_simulation_results(df, max_thrust_limit=None):
     axs[1, 1].plot(df['time'], df['p_deg'], label='P (Roll)')
     axs[1, 1].plot(df['time'], df['q_deg'], label='Q (Pitch)')
     axs[1, 1].plot(df['time'], df['r_deg'], label='R (Yaw)')
-    axs[1, 1].set_title('Body Rates')
-    axs[1, 1].set_ylabel('deg/s')
-    axs[1, 1].set_xlabel('Time (s)')
+    axs[1, 1].set_title('Body Rates', fontsize='small')
+    axs[1, 1].set_ylabel('deg/s', fontsize='small')
+    axs[1, 1].set_xlabel('Time (s)', fontsize='small')
     axs[1, 1].grid(True)
     axs[1, 1].legend()
     
@@ -215,9 +215,9 @@ def plot_simulation_results(df, max_thrust_limit=None):
     axs[2, 0].plot(df['time'], df['thrust_m4'], label='M4', alpha=0.8)
     if max_thrust_limit:
         axs[2, 0].axhline(max_thrust_limit, color='r', linestyle='--', label='Limit')
-    axs[2, 0].set_title('Motor Thrusts')
-    axs[2, 0].set_ylabel('Newtons')
-    axs[2, 0].set_xlabel('Time (s)')
+    axs[2, 0].set_title('Motor Thrusts', fontsize='small')
+    axs[2, 0].set_ylabel('Newtons', fontsize='small')
+    axs[2, 0].set_xlabel('Time (s)', fontsize='small')
     axs[2, 0].grid(True)
     axs[2, 0].legend(loc='upper right', fontsize='small')
     
@@ -225,12 +225,77 @@ def plot_simulation_results(df, max_thrust_limit=None):
     axs[2, 1].plot(df['x'], df['y'], 'b-', label='Path')
     axs[2, 1].plot(df['x'].iloc[0], df['y'].iloc[0], 'go', label='Start')
     axs[2, 1].plot(df['x'].iloc[-1], df['y'].iloc[-1], 'rx', label='End')
-    axs[2, 1].set_title('Ground Track (Top Down)')
-    axs[2, 1].set_xlabel('X (m)')
-    axs[2, 1].set_ylabel('Y (m)')
+    axs[2, 1].set_title('Ground Track (Top Down)', fontsize='small')
+    axs[2, 1].set_xlabel('X (m)', fontsize='small')
+    axs[2, 1].set_ylabel('Y (m)', fontsize='small')
     axs[2, 1].axis('equal')
     axs[2, 1].grid(True)
     axs[2, 1].legend()
+
+    att_fig = plt.figure()
+    # Attitude
+    plt.plot(df['time'], df['roll'], label='Roll')
+    plt.plot(df['time'], df['pitch'], label='Pitch')
+    plt.plot(df['time'], df['yaw'], label='Yaw')
+    plt.title('Attitude (Euler Angles)')
+    plt.ylabel('Degrees')
+    plt.xlabel('Time (s)')
+    plt.grid(True)
+    plt.legend()
+    
+    # Angular Rates
+    rates_fig = plt.figure()
+    plt.plot(df['time'], df['p_deg'], label='P (Roll)')
+    plt.plot(df['time'], df['q_deg'], label='Q (Pitch)')
+    plt.plot(df['time'], df['r_deg'], label='R (Yaw)')
+    plt.title('Body Rates')
+    plt.ylabel('deg/s')
+    plt.xlabel('Time (s)')
+    plt.grid(True)
+    plt.legend()
+
+
+    pos_fig = plt.figure()
+    # Position
+    plt.plot(df['time'], df['x'], label='X')
+    plt.plot(df['time'], df['x_des'], label='X Setpoint')
+    plt.plot(df['time'], df['y'], label='Y')
+    plt.plot(df['time'], df['y_des'], label='Y Setpoint')
+    plt.plot(df['time'], df['z'], label='Z', linewidth=2)
+    plt.plot(df['time'], df['z_des'], label='Z Setpoint')
+    plt.title('Position (Inertial)')
+    plt.ylabel('Meters')
+    plt.xlabel('Time (s)')
+    plt.grid(True)
+    plt.legend()
+    
+    vel_fig = plt.figure()
+    # Velocity
+    plt.plot(df['time'], df['vx'], label='Vx')
+    plt.plot(df['time'], df['vy'], label='Vy')
+    plt.plot(df['time'], df['vz'], label='Vz')
+    plt.title('Velocity (Inertial)')
+    plt.ylabel('m/s')
+    plt.xlabel('Time (s)')
+    plt.grid(True)
+    plt.legend()
+
+    thrust_fig = plt.figure()
+    plt.plot(df['time'], df['thrust_m1'], label='M1', alpha=0.8)
+    plt.plot(df['time'], df['thrust_m2'], label='M2', alpha=0.8)
+    plt.plot(df['time'], df['thrust_m3'], label='M3', alpha=0.8)
+    plt.plot(df['time'], df['thrust_m4'], label='M4', alpha=0.8)
+    if max_thrust_limit:
+        plt.axhline(max_thrust_limit, color='r', linestyle='--', label='Limit')
+    plt.title('Motor Thrusts', fontsize='small')
+    plt.ylabel('Newtons', fontsize='small')
+    plt.xlabel('Time (s)', fontsize='small')
+    plt.grid(True)
+    plt.title('Motor Thrusts')
+    plt.ylabel('Thrust (N)')
+    plt.xlabel('Time (s)')
+    plt.legend()
+
     
     plt.show()
     
@@ -263,12 +328,12 @@ def animate_simulation_3d(df, target_trajectory=None, filename=None):
     xx, yy = np.meshgrid(np.linspace(ax.get_xlim()[0], ax.get_xlim()[1], 10), np.linspace(ax.get_ylim()[0], ax.get_ylim()[1], 10))
     ax.plot_surface(xx, yy, xx*0, color='gray', alpha=0.2)
     
+    ax.view_init(elev=90., azim=90)
+
     # Target path
     if target_trajectory is not None:
-        '''
-        tx, ty, tz = target_trajectory[:,0], target_trajectory[:,1], target_trajectory[:,2]
+        tx, ty, tz = target_trajectory[0], target_trajectory[1], target_trajectory[2]
         ax.plot(tx, ty, tz, 'r--', label='Target Path', linewidth=1)
-        '''
 
     # Dynamic elements (initialized empty)
     line, = ax.plot([], [], [], 'b-', linewidth=1, label='Actual Path')

@@ -20,10 +20,10 @@ from payload import Payload
 # Exports
 plot_results = True
 animate = True
-export_results = True
+export_results = False
 
 # Time
-DURATION = 10.0
+DURATION = 15.0
 DT       = 0.01
 
 # Physical properties
@@ -72,30 +72,34 @@ vehicle = Vehicle(MASS, INERTIA, R_CG, R_CP_REF)
 
 # Initial state
 initial_state = State(
-    position   = [0.0, 0.0, 1.0],
-    velocity   = [0.0, 0.0, 0.0],
+    position   = [1.0, -2.0, 3.0],
+    velocity   = [0.0, -0.0, 0.0],
     quaternion = [1.0, 0.0, 0.0, 0.0],
     omega      = [0.0, 0.0, 0.0]
 )
 
 # Flight computer
-r_des = np.array([5.0, 5.0, 5.0]) 
-v_des = np.array([0.0, 0.0, 0.0])
-a_des = np.array([0.0, 0.0, 0.0])
+r_start = np.asarray(initial_state.position)
+v_start = np.asarray(initial_state.velocity)
+r_end = np.array([9.0, 3.0, 1.0])
+
 attitude_kp = np.array([[1, 0, 0],
                         [0, 1, 0],
                         [0, 0, 0.01]])
+
 attitude_kd = np.array([[0.1, 0, 0],
                         [0, 0.1, 0],
                         [0, 0, 0.01]])
+
 pos_kp = np.array([[-3, 0, 0],
                    [0, -3, 0],
                    [0, 0, -20]])
+
 pos_kd = np.array([[-4, 0, 0],
                    [0, -4, 0],
                    [0, 0, -10]])
 
-fc = FlightComputer(attitude_kp, attitude_kd, pos_kp, pos_kd, r_des, v_des, a_des, ARM_LENGTH, TORQUE_COEFF, MASS, PAYLOAD_MASS, 0.1)
+fc = FlightComputer(attitude_kp, attitude_kd, pos_kp, pos_kd, r_start, v_start, r_end, ARM_LENGTH, TORQUE_COEFF, MASS, PAYLOAD_MASS, 0.1)
 
 # Sensors
 sensors = Sensors(initial_state.copy())
@@ -143,7 +147,7 @@ if export_results:
         "initial_pos": initial_state.position
     }
 
-    export_simulation_data(df, sim_metadata, r"C:\Users\micha\OneDrive\Desktop\Drone Stuff")
+    export_simulation_data(df, sim_metadata, 'outputs/data')
     
 # ----------------------------------------------------------------------
 # PLOT DATA
@@ -155,4 +159,4 @@ if plot_results:
 # ANIMATE
 # ----------------------------------------------------------------------
 if animate:
-    animate_simulation_3d(df)
+    animate_simulation_3d(df, [df['x_des'], df['y_des'], df['z_des']],filename='outputs/animations/test_animation.gif')
