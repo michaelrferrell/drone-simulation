@@ -164,9 +164,9 @@ def plot_simulation_results(df, max_thrust_limit=None):
     df['r_deg'] = np.degrees(df['r'])
     
     # Setup figure
-    fig, axs = plt.subplots(3, 2, figsize=(16, 12))
+    fig, axs = plt.subplots(3, 2, figsize=(14, 10), constrained_layout=True)
     duration = df['time'].iloc[-1]
-    fig.suptitle(f'Flight Data Analysis (Duration: {duration:.2f}s)', fontsize=16)
+    fig.suptitle(f'Flight Data Analysis (Duration: {duration:.2f}s)', fontsize=12)
     
     # Position
     axs[0, 0].plot(df['time'], df['x'], label='X')
@@ -232,7 +232,6 @@ def plot_simulation_results(df, max_thrust_limit=None):
     axs[2, 1].grid(True)
     axs[2, 1].legend()
     
-    plt.tight_layout()
     plt.show()
     
 # animate_simulation function
