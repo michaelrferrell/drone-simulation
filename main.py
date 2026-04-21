@@ -41,9 +41,9 @@ I_ZZ = 0.004
 INERTIA = [[I_XX, 0, 0], [0, I_YY, 0], [0, 0, I_ZZ]]
 
 # Motor / propeller characteristics
-MAX_THRUST_PER_MOTOR = 5.0
-TORQUE_COEFF         = 0.001
-MOTOR_LAG            = 0.05
+MAX_THRUST_PER_MOTOR = 8.0442
+TORQUE_COEFF         = 0.013771504
+MOTOR_LAG            = 0.303062563
 
 # Utility blocks
 env = Environment()
