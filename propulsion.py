@@ -59,7 +59,7 @@ class Motor(PropulsionDevice):
         # Direction [x, y, z] unit vector pointing in direction of thrust
         self.direction = np.array(direction) / np.linalg.norm(direction)
         
-        # Torque coefficient scalar linking Thrust (N) to Torque (Nm)
+        # Torque coefficient scalar linking Thrust (N) to Torque Drag (Nm)
         self.torque_coeff = torque_coeff # Positive/Negative determines CW/CCW torque reaction
         
         # Max thrust of motor+propeller (N)
