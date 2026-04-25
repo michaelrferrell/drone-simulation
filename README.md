@@ -21,7 +21,7 @@ This project was collaboratively designed and developed by:
 
 * **Krithi Koodli**
   * Trajectory Generation Algorithms
-  * Flight Controller Design (Position & Attitude)
+  * Flight Controller Design
   * Integration of the Controller into the Simulation Environment
 
 ---
