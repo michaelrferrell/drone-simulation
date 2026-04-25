@@ -1,6 +1,6 @@
 # Drone Flight Dynamics & Payload Simulation
 
-A custom 6-DOF (Degree of Freedom) VTOL simulation environment built to model complex drone physics, payload deployment dynamics, and advanced flight control algorithms.
+A custom 6-DOF VTOL simulation environment built to model complex drone physics, payload deployment dynamics, and advanced flight control algorithms.
 
 *This project was developed as part of the **MAE 157 D/E Capstone** course at the **University of California, Los Angeles (UCLA)**.*
 * **Instructor:** Professor Lopez
