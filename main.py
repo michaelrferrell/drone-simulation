@@ -20,19 +20,23 @@ from payload import Payload
 # Exports
 plot_results = True
 animate = True
-export_results = False
+export_results = True
 
 # Time
 DURATION = 15.0
 DT       = 0.01
 
 # Physical properties
-PAYLOAD_MASS = 0.05
 VEHICLE_MASS = 0.9
-MASS = VEHICLE_MASS + PAYLOAD_MASS # Total mass of vehicle (including motors)
 R_CG = [0.0, 0.0, 0.0] # Relative to body frame origin
 R_CP_REF = [0.0, 0.0, 0.0] # Relative to body frame origin
 ARM_LENGTH = 0.1
+
+# Payload properties
+PAYLOAD_MASS = 0.05
+ANCHOR_POINT = [0.0, 0.0, -0.05]
+LOWERING_SPEED = 0.5
+MAX_STRING_LENGTH = 1.0
 
 # Inertia tensor
 I_XX = 0.004
@@ -41,9 +45,9 @@ I_ZZ = 0.004
 INERTIA = [[I_XX, 0, 0], [0, I_YY, 0], [0, 0, I_ZZ]]
 
 # Motor / propeller characteristics
-MAX_THRUST_PER_MOTOR = 8.0442
-TORQUE_COEFF         = 0.013771504
-MOTOR_LAG            = 0.303062563
+MAX_THRUST_PER_MOTOR = 5.0 # 8.0442
+TORQUE_COEFF         = 0.001 # 0.013771504
+MOTOR_LAG            = 0.05 # 0.303062563
 
 # Utility blocks
 env = Environment()
@@ -68,7 +72,7 @@ m4 = Motor([ 0, -ARM_LENGTH, 0], [0,0,1],  TORQUE_COEFF, MAX_THRUST_PER_MOTOR, M
 prop_system = Propulsion([m1, m2, m3, m4])
 
 # Vehicle body
-vehicle = Vehicle(MASS, INERTIA, R_CG, R_CP_REF)
+vehicle = Vehicle(VEHICLE_MASS, INERTIA, R_CG, R_CP_REF)
 
 # Initial state
 initial_state = State(
@@ -99,13 +103,18 @@ pos_kd = np.array([[-4, 0, 0],
                    [0, -4, 0],
                    [0, 0, -10]])
 
-fc = FlightComputer(attitude_kp, attitude_kd, pos_kp, pos_kd, r_start, v_start, r_end, ARM_LENGTH, TORQUE_COEFF, MASS, PAYLOAD_MASS, 0.1)
+fc = FlightComputer(attitude_kp, attitude_kd, pos_kp, pos_kd, r_start, v_start, r_end, ARM_LENGTH, TORQUE_COEFF, VEHICLE_MASS, 0.1)
 
 # Sensors
 sensors = Sensors(initial_state.copy())
 
 # Payload
-payload = Payload(PAYLOAD_MASS)
+payload = Payload(
+    mass=PAYLOAD_MASS,
+    anchor_point=np.array(ANCHOR_POINT),
+    dl_dt=LOWERING_SPEED,
+    max_length=MAX_STRING_LENGTH
+)
 
 # ----------------------------------------------------------------------
 # RUN SIMULATION
@@ -140,14 +149,14 @@ if export_results:
     sim_metadata = {
         "duration": DURATION,
         "dt": DT,
-        "mass": MASS,
+        "mass": VEHICLE_MASS,
         "inertia": INERTIA,
         "motor_lag": MOTOR_LAG,
         "max_thrust": MAX_THRUST_PER_MOTOR,
         "initial_pos": initial_state.position
     }
 
-    export_simulation_data(df, sim_metadata, 'outputs/data')
+    export_simulation_data(df, sim_metadata, r'C:\Users\micha\OneDrive\Desktop\outputs\data')
     
 # ----------------------------------------------------------------------
 # PLOT DATA
@@ -159,4 +168,7 @@ if plot_results:
 # ANIMATE
 # ----------------------------------------------------------------------
 if animate:
-    animate_simulation_3d(df, [df['x_des'], df['y_des'], df['z_des']],filename='outputs/animations/test_animation.gif')
+    if export_results:
+        animate_simulation_3d(df, [df['x_des'], df['y_des'], df['z_des']], filename=r'C:\Users\micha\OneDrive\Desktop\outputs\animations\test_animation.gif')
+    else:
+        animate_simulation_3d(df, [df['x_des'], df['y_des'], df['z_des']])

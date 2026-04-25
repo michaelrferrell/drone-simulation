@@ -4,7 +4,7 @@ from utils import quat_multiply, quat_conjugate, split_quat
 from conversions_constants import *
 
 class FlightComputer:
-    def __init__(self, attitude_kp, attitude_kd, pos_kp, pos_kd, r_start, v_start, r_end, arm_length, torque_coeff, mass, payload_mass, payload_threshold):
+    def __init__(self, attitude_kp, attitude_kd, pos_kp, pos_kd, r_start, v_start, r_end, arm_length, torque_coeff, mass, payload_threshold):
         # Gains
         self.attitude_kp = attitude_kp
         self.attitude_kd = attitude_kd
@@ -20,7 +20,6 @@ class FlightComputer:
         self.arm_length = arm_length
         self.torque_coeff = torque_coeff
         self.mass = mass
-        self.payload_mass = payload_mass
         self.payload_threshold = payload_threshold
         self.deployed_payload = False
 
@@ -51,8 +50,7 @@ class FlightComputer:
 
         
         m1_cmd, m2_cmd, m3_cmd, m4_cmd = np.linalg.inv(mapping_matrix)@np.array([thrust_des, tau_des[0], tau_des[1], tau_des[2]]).T
-        # print(quatAxisAngleRotVec)
-        # Formatting
+
         commands = [
             max(0.0, m1_cmd),
             max(0.0, m2_cmd),
@@ -71,19 +69,17 @@ class FlightComputer:
         r_error = r_des - r_fc
         v_error = v_des - v_fc
 
-
-
         target_acceleration = a_des -self.pos_kp@r_error.T -self.pos_kd@v_error.T + np.array([0, 0, STANDARD_GRAVITY]).T
         if target_acceleration[2] < 0:
             target_acceleration[2] = 0
         if np.linalg.norm(target_acceleration) > 2*STANDARD_GRAVITY:
             target_acceleration = target_acceleration/np.linalg.norm(target_acceleration)*20
         return target_acceleration
-        # return np.array([0.0, 0.0, STANDARD_GRAVITY])
     
-
+    # compute_desired_trajectory function
+    # Returns required trajectory to go from starting position to ending position
     def compute_desired_trajectory(self, current_time, t_f):
-
+        # FIX
         start_pos = np.array([1.0, -2.0, 3.0])
         start_vel = np.array([2.0, -1.0, 0.0])
         end_pos = np.array([9.0, 3.0, 1.0])
@@ -96,7 +92,6 @@ class FlightComputer:
                       [0, 1, 2*t_f, 3*t_f**2, 4*t_f**3, 5*t_f**4, 6*t_f**5, 7*t_f**6],
                       [0, 0, 2, 6*t_f, 12*t_f**2, 20*t_f**3, 30*t_f**4, 42*t_f**5], 
                       [0, 0, 0, 6, 24*t_f, 60*t_f**2, 120*t_f**3, 210*t_f**4]])
-
 
         start_state_vec_x = np.array([start_pos[0], start_vel[0], 0, 0])
         start_state_vec_y = np.array([start_pos[1], start_vel[1], 0, 0])
@@ -111,10 +106,6 @@ class FlightComputer:
         coeffs_y = np.flip(coeffs_y)
         coeffs_z = np.flip(coeffs_z)
 
-        # print(np.array([start_state_vec_x[0], start_state_vec_x[1], start_state_vec_x[2], start_state_vec_x[3], end_pos[0], 0.0, 0.0, 0.0]).T)
-        # print(coeffs_y)
-        # print(coeffs_z)
-
         r_des_x = np.polyval(coeffs_x, current_time)
         r_des_y = np.polyval(coeffs_y, current_time)
         r_des_z = np.polyval(coeffs_z, current_time)
@@ -128,24 +119,17 @@ class FlightComputer:
         a_des_y = np.polyval(np.polyder(np.polyder(coeffs_y)), current_time)
         a_des_z = np.polyval(np.polyder(np.polyder(coeffs_z)), current_time)
 
-        # print(current_time, r_des_x, r_des_y, r_des_z)
-
-        # if current_time < 0.2:
-        #     return np.array([5, 5, 5]), np.array([0, 0, 0]), np.array([0, 0, 0])
-        # else:
-        #     return np.array([0, 0, 0]), np.array([0, 0, 0]), np.array([0, 0, 0])
         return np.array([r_des_x, r_des_y, r_des_z]), np.array([v_des_x, v_des_y, v_des_z]), np.array([a_des_x, a_des_y, a_des_z])
 
     # process_payload_deployment function
     # Checks if target target payload deployment location is reached
-    def process_payload_deployment(self, sensor_readings, r_des, threshold, payload_mass):
-        r_fc = sensor_readings['position']      # [x, y, z] inertial
+    def process_payload_deployment(self, sensor_readings, r_des, threshold):
+        r_fc = sensor_readings['position'] # [x, y, z] inertial
         r_error = r_des - r_fc
         distance = np.linalg.norm(r_error)
         
         if distance < threshold and self.deployed_payload == False:
             self.deployed_payload = True
-            self.mass = self.mass - payload_mass
             return "DEPLOY"
         else:
             return "SAFE"

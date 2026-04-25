@@ -88,7 +88,7 @@ def get_orientation_vectors(row):
 
 # update_animation_frame function
 # Updates the position of the lines and markers based on the current frame
-def update_animation_frame(frame, data, line, drone_body, arm_x, arm_y, arm_z, arm_length):
+def update_animation_frame(frame, data, line, drone_body, arm_x, arm_y, arm_z, arm_length, string_line, egg_marker):
     # Current state
     current = data.iloc[frame]
     
@@ -98,6 +98,7 @@ def update_animation_frame(frame, data, line, drone_body, arm_x, arm_y, arm_z, a
     line.set_3d_properties(history['z'])
     
     # Update drone center
+    drone_pos = np.array([current['x'], current['y'], current['z']])
     drone_body.set_data([current['x']], [current['y']]) 
     drone_body.set_3d_properties([current['z']])
     
@@ -119,7 +120,44 @@ def update_animation_frame(frame, data, line, drone_body, arm_x, arm_y, arm_z, a
                    [current['y'], current['y'] + vec_z[1]*arm_length])
     arm_z.set_3d_properties([current['z'], current['z'] + vec_z[2]*arm_length])
     
-    return line, drone_body, arm_x, arm_y, arm_z
+    # Payload animation
+    l = current['payload_l']
+    theta = current['payload_theta']
+    phi = current['payload_phi']
+    status = current['payload_status']
+    
+    # Calculate anchor point using the orientation vectors
+    anchor_body = np.array([current['anchor_x'], current['anchor_y'], current['anchor_z']])
+    anchor_offset = (anchor_body[0] * np.array(vec_x) + 
+                     anchor_body[1] * np.array(vec_y) + 
+                     anchor_body[2] * np.array(vec_z))
+    anchor_inertial = drone_pos + anchor_offset
+    
+    if status == "STOWED": # String is hidden
+            egg_marker.set_data([anchor_inertial[0]], [anchor_inertial[1]])
+            egg_marker.set_3d_properties([anchor_inertial[2]])
+            
+            string_line.set_data([], [])
+            string_line.set_3d_properties([])
+            
+    else: # LOWERING, FREEFALL, or DROPPED
+        egg_x = current['payload_x']
+        egg_y = current['payload_y']
+        egg_z = current['payload_z']
+        
+        # Update the egg marker
+        egg_marker.set_data([egg_x], [egg_y])
+        egg_marker.set_3d_properties([egg_z])
+        
+        # Hide string if detached
+        if status in ["FREEFALL", "DROPPED"]:
+            string_line.set_data([], [])
+            string_line.set_3d_properties([])
+        else:
+            string_line.set_data([anchor_inertial[0], egg_x], [anchor_inertial[1], egg_y])
+            string_line.set_3d_properties([anchor_inertial[2], egg_z])
+
+    return line, drone_body, arm_x, arm_y, arm_z, string_line, egg_marker
 
 # ----------------------------------------------------------------------
 # Main utilities 
@@ -254,7 +292,6 @@ def plot_simulation_results(df, max_thrust_limit=None):
     plt.grid(True)
     plt.legend()
 
-
     pos_fig = plt.figure()
     # Position
     plt.plot(df['time'], df['x'], label='X')
@@ -296,7 +333,6 @@ def plot_simulation_results(df, max_thrust_limit=None):
     plt.xlabel('Time (s)')
     plt.legend()
 
-    
     plt.show()
     
 # animate_simulation function
@@ -328,7 +364,7 @@ def animate_simulation_3d(df, target_trajectory=None, filename=None):
     xx, yy = np.meshgrid(np.linspace(ax.get_xlim()[0], ax.get_xlim()[1], 10), np.linspace(ax.get_ylim()[0], ax.get_ylim()[1], 10))
     ax.plot_surface(xx, yy, xx*0, color='gray', alpha=0.2)
     
-    ax.view_init(elev=90., azim=90)
+    ax.view_init(elev=15., azim=45)
 
     # Target path
     if target_trajectory is not None:
@@ -341,13 +377,16 @@ def animate_simulation_3d(df, target_trajectory=None, filename=None):
     arm_x, = ax.plot([], [], [], 'r-', linewidth=2) 
     arm_y, = ax.plot([], [], [], 'g-', linewidth=2) 
     arm_z, = ax.plot([], [], [], 'b-', linewidth=2) 
+    string_line, = ax.plot([], [], [], 'k-', linewidth=1, alpha=0.6)
+    egg_marker, = ax.plot([], [], [], 'mo', markersize=6, label='Egg')
 
-    # Greate animation
-    update_func = partial(update_animation_frame, data=data, line=line, drone_body=drone_body, arm_x=arm_x, arm_y=arm_y, arm_z=arm_z, arm_length=0.5)
+    # Create animation
+    update_func = partial(update_animation_frame, data=data, line=line, drone_body=drone_body, arm_x=arm_x, arm_y=arm_y, arm_z=arm_z, arm_length=0.5, string_line=string_line, egg_marker=egg_marker)
     ani = animation.FuncAnimation(fig, update_func, frames=len(data), interval=30, blit=False)
     
     if filename:
         print(f"Saving animation to {filename}...")
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
         ani.save(filename, writer='ffmpeg', fps=30)
         
     plt.legend()

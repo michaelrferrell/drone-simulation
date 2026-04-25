@@ -16,11 +16,17 @@ class Sensors:
     # measure function
     # Takes the true physical state and simulates sensor readings
     def measure(self, true_state, omega, accel, dt):
-        # GPS / motion capture (position)
-        self.accel = accel + np.random.normal(-1, 1)
-        self.omega = omega + np.random.normal(-5*np.pi/180, 5*np.pi/180)
-        self.pos = true_state.position + np.random.normal(-0.05, 0.05)
-        self.vel = true_state.velocity + np.random.normal(-0.05, 0.05)
+        # GPS / motion capture (position) FIX
+        # self.accel = accel + np.random.normal(-1, 1)
+        # self.omega = omega + np.random.normal(-5*np.pi/180, 5*np.pi/180)
+        # self.pos = true_state.position + np.random.normal(-0.05, 0.05)
+        # self.vel = true_state.velocity + np.random.normal(-0.05, 0.05)
+        # self.quat = true_state.quaternion
+        
+        self.accel = accel
+        self.omega = omega
+        self.pos = true_state.position
+        self.vel = true_state.velocity
         self.quat = true_state.quaternion
 
         # self.vel += self.accel*dt

@@ -7,9 +7,18 @@ class RK4:
     
     # step function
     # Performs one RK4 integration step to update the state
-    def step(self, state, vehicle, propulsion, dynamics, environment, dt):       
-        # Calculate propulsive wrench (force & torque) - assumed constant for the duration of the single time step
-        forces_body, torques_body = propulsion.compute_wrench(vehicle.r_cg)
+    def step(self, state, vehicle, propulsion, payload, dynamics, environment, dt, last_accel_inertial):       
+        # Calculate propulsive wrench (force & torque)
+        prop_forces, prop_torques = propulsion.compute_wrench(vehicle.r_cg)
+        
+        # Calculate payload wrench (force & torque)
+        R_inertial_to_body = state.get_rotation_matrix().T
+        last_accel_body = R_inertial_to_body.dot(last_accel_inertial)
+        payload_forces, payload_torques = payload.compute_wrench(last_accel_body, state, environment)
+        
+        # Combine wrenches
+        forces_body = prop_forces + payload_forces
+        torques_body = prop_torques + payload_torques
         
         # k1
         k1 = dynamics.compute_derivatives(state, vehicle, forces_body, torques_body, environment)
