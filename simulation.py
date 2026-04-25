@@ -45,12 +45,12 @@ class Simulation:
         accel = np.array([0.0, 0.0, 0.0]) # Initial acceleration at rest
         sensor_readings = self.sensors.measure(self.state.copy(), omega, accel, self.dt)
         
-        target_acceleration = self.fc.compute_target_acceleration(sensor_readings, self.fc.r_start, np.array([0.0, 0.0, 0.0]), np.array([0.0, 0.0, 0.0]))  # replace with r_des, v_des, a_des from trajectory FIX
+        target_acceleration = self.fc.compute_target_acceleration(sensor_readings, self.fc.r_start, np.array([0.0, 0.0, 0.0]), np.array([0.0, 0.0, 0.0]))
         motor_commands = self.fc.compute_motor_commands(sensor_readings, target_acceleration, 90*np.pi/180, 0.1)
         payload_command = self.fc.process_payload_deployment(sensor_readings, self.fc.r_end, self.fc.payload_threshold)
         
         # Log initial state at t=0
-        self.log_step(motor_commands)
+        self.log_step(motor_commands, r_des=self.fc.r_start)
         
         # Main simulation loop
         for step in range(total_steps):
@@ -109,18 +109,13 @@ class Simulation:
             sensor_readings = self.sensors.measure(self.state.copy(), omega, accel, self.dt)
             
             # Think
-            t_f = 3.0 # FIX
-  
-            if self.time < t_f:
-                r_des, v_des, a_des = self.fc.compute_desired_trajectory(self.time, t_f)
-            elif self.time > t_f + 5.0:
-                r_des = np.array([0, 0, 2.0])
+            if self.time < self.fc.t_f:
+                r_des, v_des, a_des = self.fc.compute_desired_trajectory(self.time, self.fc.t_f, self.fc.r_start, self.fc.v_start, self.fc.r_end)
+            elif self.time > self.fc.t_f + self.fc.t_hover:
+                r_des = self.fc.r_return
                 v_des = np.array([0, 0, 0])
                 a_des = np.array([0, 0, 0])
-            # r_des = np.array([3*np.sin(self.time), 3*np.cos(self.time), 5.0])
-            # v_des = np.array([3*np.cos(self.time), -3*np.sin(self.time), 0.0])
-            # a_des = np.array([0.0, 0.0, 0.0])
-    
+
             target_acceleration = self.fc.compute_target_acceleration(sensor_readings, r_des, v_des, a_des)
             motor_commands = self.fc.compute_motor_commands(sensor_readings, target_acceleration, 90*np.pi/180, 0.1)
             payload_command = self.fc.process_payload_deployment(sensor_readings, self.fc.r_end, self.fc.payload_threshold)
@@ -150,7 +145,7 @@ class Simulation:
         if r_des is not None:
             traj = r_des
         else:
-            traj = np.array([0, 0, 0])
+            traj = pos.copy()
         
         actual_thrusts = [m.current_thrust for m in self.prop.prop_devices]
         

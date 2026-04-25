@@ -4,7 +4,7 @@ from utils import quat_multiply, quat_conjugate, split_quat
 from conversions_constants import *
 
 class FlightComputer:
-    def __init__(self, attitude_kp, attitude_kd, pos_kp, pos_kd, r_start, v_start, r_end, arm_length, torque_coeff, mass, payload_threshold):
+    def __init__(self, attitude_kp, attitude_kd, pos_kp, pos_kd, r_start, v_start, r_end, r_return, t_f, t_hover, arm_length, torque_coeff, mass, payload_threshold):
         # Gains
         self.attitude_kp = attitude_kp
         self.attitude_kd = attitude_kd
@@ -12,9 +12,14 @@ class FlightComputer:
         self.pos_kd = pos_kd
         
         # Desired states
-        self.r_start = r_start
-        self.v_start = v_start
-        self.r_end = r_end
+        self.r_start = r_start.copy()
+        self.v_start = v_start.copy()
+        self.r_end = r_end.copy()
+        self.r_return = r_return.copy() # Desired position for drone to return to
+        
+        # Trajectory info
+        self.t_f = t_f # Time to reach trajectory endpoint
+        self.t_hover = t_hover # Time that drone hovers while delivering payload
         
         # Vehicle information
         self.arm_length = arm_length
@@ -78,12 +83,7 @@ class FlightComputer:
     
     # compute_desired_trajectory function
     # Returns required trajectory to go from starting position to ending position
-    def compute_desired_trajectory(self, current_time, t_f):
-        # FIX
-        start_pos = np.array([1.0, -2.0, 3.0])
-        start_vel = np.array([2.0, -1.0, 0.0])
-        end_pos = np.array([9.0, 3.0, 1.0])
-
+    def compute_desired_trajectory(self, current_time, t_f, r_start, v_start, r_des):
         M = np.array([[1, 0, 0, 0, 0, 0, 0, 0],
                       [0, 1, 0, 0, 0, 0, 0, 0], 
                       [0, 0, 2, 0, 0, 0, 0, 0], 
@@ -93,14 +93,14 @@ class FlightComputer:
                       [0, 0, 2, 6*t_f, 12*t_f**2, 20*t_f**3, 30*t_f**4, 42*t_f**5], 
                       [0, 0, 0, 6, 24*t_f, 60*t_f**2, 120*t_f**3, 210*t_f**4]])
 
-        start_state_vec_x = np.array([start_pos[0], start_vel[0], 0, 0])
-        start_state_vec_y = np.array([start_pos[1], start_vel[1], 0, 0])
-        start_state_vec_z = np.array([start_pos[2], start_vel[2], 0, 0])
+        start_state_vec_x = np.array([r_start[0], v_start[0], 0, 0])
+        start_state_vec_y = np.array([r_start[1], v_start[1], 0, 0])
+        start_state_vec_z = np.array([r_start[2], v_start[2], 0, 0])
 
         M_inv = np.linalg.inv(M)
-        coeffs_x = M_inv@np.array([start_state_vec_x[0], start_state_vec_x[1], start_state_vec_x[2], start_state_vec_x[3], end_pos[0], 0.0, 0.0, 0.0]).T
-        coeffs_y = M_inv@np.array([start_state_vec_y[0], start_state_vec_y[1], start_state_vec_y[2], start_state_vec_y[3], end_pos[1], 0.0, 0.0, 0.0]).T
-        coeffs_z = M_inv@np.array([start_state_vec_z[0], start_state_vec_z[1], start_state_vec_z[2], start_state_vec_z[3], end_pos[2], 0.0, 0.0, 0.0]).T
+        coeffs_x = M_inv@np.array([start_state_vec_x[0], start_state_vec_x[1], start_state_vec_x[2], start_state_vec_x[3], r_des[0], 0.0, 0.0, 0.0]).T
+        coeffs_y = M_inv@np.array([start_state_vec_y[0], start_state_vec_y[1], start_state_vec_y[2], start_state_vec_y[3], r_des[1], 0.0, 0.0, 0.0]).T
+        coeffs_z = M_inv@np.array([start_state_vec_z[0], start_state_vec_z[1], start_state_vec_z[2], start_state_vec_z[3], r_des[2], 0.0, 0.0, 0.0]).T
 
         coeffs_x = np.flip(coeffs_x)
         coeffs_y = np.flip(coeffs_y)
@@ -109,7 +109,6 @@ class FlightComputer:
         r_des_x = np.polyval(coeffs_x, current_time)
         r_des_y = np.polyval(coeffs_y, current_time)
         r_des_z = np.polyval(coeffs_z, current_time)
-
 
         v_des_x = np.polyval(np.polyder(coeffs_x), current_time)
         v_des_y = np.polyval(np.polyder(coeffs_y), current_time)

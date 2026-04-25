@@ -341,7 +341,7 @@ def animate_simulation_3d(df, target_trajectory=None, filename=None):
     print("Generating 3D Animation...")
     
     # Downsample data
-    skip = 5 
+    skip = 5
     data = df.iloc[::skip].reset_index(drop=True)
     
     # Setup figure
