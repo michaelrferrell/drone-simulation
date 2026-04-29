@@ -78,7 +78,8 @@ class FlightComputer:
         if target_acceleration[2] < 0:
             target_acceleration[2] = 0
         if np.linalg.norm(target_acceleration) > 2*STANDARD_GRAVITY:
-            target_acceleration = target_acceleration/np.linalg.norm(target_acceleration)*20
+            target_acceleration = target_acceleration/np.linalg.norm(target_acceleration)*2*STANDARD_GRAVITY
+        # target_acceleration = np.array([2.0, 0.0, 9.807])
         return target_acceleration
     
     # compute_desired_trajectory function
@@ -118,6 +119,7 @@ class FlightComputer:
         a_des_y = np.polyval(np.polyder(np.polyder(coeffs_y)), current_time)
         a_des_z = np.polyval(np.polyder(np.polyder(coeffs_z)), current_time)
 
+        # return np.array([1.0, 1.0, 2.0]), np.array([0.0, 0.0, 0.0]), np.array([0.0, 0.0, 0.0])
         return np.array([r_des_x, r_des_y, r_des_z]), np.array([v_des_x, v_des_y, v_des_z]), np.array([a_des_x, a_des_y, a_des_z])
 
     # process_payload_deployment function
