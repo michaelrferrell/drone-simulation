@@ -82,7 +82,7 @@ vehicle = Vehicle(VEHICLE_MASS, INERTIA, R_CG, R_CP_REF)
 
 # Initial state
 initial_state = State(
-    position   = [0.0, 0.0, 0.0],
+    position   = [0.0, 0.0, 3.0],
     velocity   = [0.0, 0.0, 0.0],
     quaternion = [1.0, 0.0, 0.0, 0.0],
     omega      = [0.0, 0.0, 0.0]
@@ -92,27 +92,27 @@ initial_state = State(
 r_start = np.asarray(initial_state.position)
 v_start = np.asarray(initial_state.velocity)
 r_end = np.array([10.0, 10.0, 1.0]) # Payload delivery coordinates
-r_return = np.array([0.0, 0.0, 5.0]) # Return coordinates for drone
+r_return = np.array([9.0, 9.0, 1.0]) # Return coordinates for drone
 t_f = 5 # Desired time to payload delivery position
-t_hover = 0.001 # Time maintaining payload delivery position
+t_hover = 2 # Time maintaining payload delivery position
 
-attitude_kp = np.array([[1, 0, 0],
-                        [0, 1, 0],
+attitude_kp = np.array([[2, 0, 0],
+                        [0, 2, 0],
                         [0, 0, 0.01]])
 
-attitude_kd = np.array([[0.1, 0, 0],
-                        [0, 0.1, 0],
+attitude_kd = np.array([[0.4, 0, 0],
+                        [0, 0.4, 0],
                         [0, 0, 0.01]])
 
-pos_kp = np.array([[-3, 0, 0],
-                   [0, -3, 0],
+pos_kp = np.array([[-2, 0, 0],
+                   [0, -2, 0],
                    [0, 0, -20]])
 
-pos_kd = np.array([[-4, 0, 0],
-                   [0, -4, 0],
+pos_kd = np.array([[-5, 0, 0],
+                   [0, -5, 0],
                    [0, 0, -10]])
 
-fc = FlightComputer(attitude_kp, attitude_kd, pos_kp, pos_kd, r_start, v_start, r_end, r_return, t_f, t_hover, ARM_LENGTH, TORQUE_COEFF, VEHICLE_MASS, 0.1)
+fc = FlightComputer(attitude_kp, attitude_kd, pos_kp, pos_kd, r_start, v_start, r_end, r_return, t_f, t_hover, ARM_LENGTH, TORQUE_COEFF, VEHICLE_MASS, 0.3)
 
 # Sensors
 sensors = Sensors(initial_state.copy())
