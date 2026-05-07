@@ -28,32 +28,32 @@ DT       = 0.01
 
 # Physical properties
 VEHICLE_MASS = 0.772
-R_CG = [float(0.0671/1000), float(-0.113/1000), float(25.092/1000)] # Relative to body frame origin (IMU)
+R_CG = [-0.000032, 0.000011, 0.02277] # Relative to body frame origin (IMU)
 R_CP_REF = [0.0, 0.0, 0.0] # Relative to body frame origin (IMU)
 ARM_LENGTH = 0.13139 # Relative to CG
 
 # Payload properties
 PAYLOAD_MASS = 0.071
-ANCHOR_POINT = [float(16/1000), float(12.5/1000), float(-25.1/1000)] # Relative to body frame origin (IMU)
+ANCHOR_POINT = [0.016, 0.0125, -0.0251] # Relative to body frame origin (IMU)
 LOWERING_SPEED = 0.5
 MAX_STRING_LENGTH = 1.0
 
 # Inertia tensor
-I_XX = 0.002300652
-I_YX = 0.000000048
-I_ZX = -0.000002475
-I_XY = 0.000000048
-I_YY = 0.00220791
-I_ZY = -0.000004592
-I_XZ = -0.000002475
-I_YZ = -0.000004592
-I_ZZ = 0.00360216
+I_XX = 0.003053875
+I_YX = 0.000000028
+I_ZX = 0.000000833
+I_XY = 0.000000028
+I_YY = 0.002950495
+I_ZY = -0.00001634
+I_XZ = 0.000000833
+I_YZ = -0.00001634
+I_ZZ = 0.003611372
 INERTIA = [[I_XX, I_YX, I_ZX], [I_XY, I_YY, I_ZY], [I_XZ, I_YZ, I_ZZ]]
 
 # Motor / propeller characteristics
-MAX_THRUST_PER_MOTOR = 8.0442 #5.0 
-TORQUE_COEFF         = 0.013771504 #0.001
-MOTOR_LAG            = 0.162462769 #0.05
+MAX_THRUST_PER_MOTOR = 8.0442
+TORQUE_COEFF         = 0.013771504
+MOTOR_LAG            = 0.162462769
 
 # Utility blocks
 env = Environment()
@@ -63,17 +63,17 @@ rk4 = RK4()
 # ----------------------------------------------------------------------
 # SETUP SYSTEMS
 # ----------------------------------------------------------------------
-# Motor 1: (+x, 0) - spins CCW
-m1 = Motor([ARM_LENGTH, 0, 0], [0,0,1], -TORQUE_COEFF, MAX_THRUST_PER_MOTOR, MOTOR_LAG)
+# Motor 1: (+x, +y) - spins CCW
+m1 = Motor([0.088701, 0.088957, 0], [0,0,1], -TORQUE_COEFF, MAX_THRUST_PER_MOTOR, MOTOR_LAG)
 
-# Motor 2: (-x, 0) - spins CCW
-m2 = Motor([-ARM_LENGTH, 0, 0], [0,0,1],  -TORQUE_COEFF, MAX_THRUST_PER_MOTOR, MOTOR_LAG)
+# Motor 2: (+x, -y) - spins CW
+m2 = Motor([0.088936, -0.088658, 0], [0,0,1], TORQUE_COEFF, MAX_THRUST_PER_MOTOR, MOTOR_LAG)
 
-# Motor 3: (0, +y) - spins CW
-m3 = Motor([0, ARM_LENGTH, 0], [0,0,1], TORQUE_COEFF, MAX_THRUST_PER_MOTOR, MOTOR_LAG)
+# Motor 3: (-x, -y) - spins CCW
+m3 = Motor([-0.088679, -0.088893, 0], [0,0,1], -TORQUE_COEFF, MAX_THRUST_PER_MOTOR, MOTOR_LAG)
 
-# Motor 4: (0, -y) - spins CW
-m4 = Motor([ 0, -ARM_LENGTH, 0], [0,0,1],  TORQUE_COEFF, MAX_THRUST_PER_MOTOR, MOTOR_LAG)
+# Motor 4: (-x, +y) - spins CW
+m4 = Motor([ -0.088914, 0.088722, 0], [0,0,1], TORQUE_COEFF, MAX_THRUST_PER_MOTOR, MOTOR_LAG)
 
 prop_system = Propulsion([m1, m2, m3, m4])
 
@@ -82,7 +82,7 @@ vehicle = Vehicle(VEHICLE_MASS, INERTIA, R_CG, R_CP_REF)
 
 # Initial state
 initial_state = State(
-    position   = [0.0, 0.0, 3.0],
+    position   = [0.0, 0.0, 0.0],
     velocity   = [0.0, 0.0, 0.0],
     quaternion = [1.0, 0.0, 0.0, 0.0],
     omega      = [0.0, 0.0, 0.0]

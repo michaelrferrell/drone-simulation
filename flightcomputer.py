@@ -53,7 +53,6 @@ class FlightComputer:
                                    [-self.arm_length, self.arm_length, 0, 0],
                                    [-self.torque_coeff, -self.torque_coeff, self.torque_coeff, self.torque_coeff]])
 
-        
         m1_cmd, m2_cmd, m3_cmd, m4_cmd = np.linalg.inv(mapping_matrix)@np.array([thrust_des, tau_des[0], tau_des[1], tau_des[2]]).T
 
         commands = [
