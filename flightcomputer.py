@@ -47,11 +47,12 @@ class FlightComputer:
 
         tau_des = -error_quat_scalar*self.attitude_kp@error_quat_vector - self.attitude_kd@omega_fc
         thrust_des = self.mass*np.linalg.norm(target_acceleration)
-
+        
+        arm_length_leg = self.arm_length*np.sin(np.pi/4)
         mapping_matrix = np.array([[1, 1, 1, 1],
-                                   [0, 0, self.arm_length, -self.arm_length],
-                                   [-self.arm_length, self.arm_length, 0, 0],
-                                   [-self.torque_coeff, -self.torque_coeff, self.torque_coeff, self.torque_coeff]])
+                                   [arm_length_leg, -arm_length_leg, -arm_length_leg, arm_length_leg],
+                                   [-arm_length_leg, -arm_length_leg, arm_length_leg, arm_length_leg],
+                                   [-self.torque_coeff, self.torque_coeff, -self.torque_coeff, self.torque_coeff]])
 
         m1_cmd, m2_cmd, m3_cmd, m4_cmd = np.linalg.inv(mapping_matrix)@np.array([thrust_des, tau_des[0], tau_des[1], tau_des[2]]).T
 
