@@ -47,7 +47,7 @@ class Simulation:
         
         target_acceleration = self.fc.compute_target_acceleration(sensor_readings, self.fc.r_start, np.array([0.0, 0.0, 0.0]), np.array([0.0, 0.0, 0.0]))
         motor_commands = self.fc.compute_motor_commands(sensor_readings, target_acceleration, 90*np.pi/180, 0.1)
-        payload_command = self.fc.process_payload_deployment(sensor_readings, self.fc.r_end, self.fc.payload_threshold)
+        payload_command = self.fc.process_payload_deployment(sensor_readings, self.fc.r_end, self.fc.v_end, self.fc.r_threshold, self.fc.v_threshold)
         
         # Log initial state at t=0
         self.log_step(motor_commands, r_des=self.fc.r_start)
@@ -118,7 +118,7 @@ class Simulation:
 
             target_acceleration = self.fc.compute_target_acceleration(sensor_readings, r_des, v_des, a_des)
             motor_commands = self.fc.compute_motor_commands(sensor_readings, target_acceleration, 90*np.pi/180, 0.1)
-            payload_command = self.fc.process_payload_deployment(sensor_readings, self.fc.r_end, self.fc.payload_threshold)
+            payload_command = self.fc.process_payload_deployment(sensor_readings, self.fc.r_end, self.fc.v_end, self.fc.r_threshold, self.fc.v_threshold)
             
             # Safety check
             if self.check_safety_violation():

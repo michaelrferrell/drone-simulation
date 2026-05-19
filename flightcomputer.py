@@ -4,7 +4,7 @@ from utils import quat_multiply, quat_conjugate, split_quat
 from conversions_constants import *
 
 class FlightComputer:
-    def __init__(self, attitude_kp, attitude_kd, pos_kp, pos_kd, r_start, v_start, r_end, r_return, t_f, t_hover, arm_length, torque_coeff, mass, payload_threshold):
+    def __init__(self, attitude_kp, attitude_kd, pos_kp, pos_kd, r_start, v_start, r_end, v_end, r_return, t_f, t_hover, arm_length, torque_coeff, mass, r_threshold, v_threshold):
         # Gains
         self.attitude_kp = attitude_kp
         self.attitude_kd = attitude_kd
@@ -15,6 +15,7 @@ class FlightComputer:
         self.r_start = r_start.copy()
         self.v_start = v_start.copy()
         self.r_end = r_end.copy()
+        self.v_end = v_end.copy()
         self.r_return = r_return.copy() # Desired position for drone to return to
         
         # Trajectory info
@@ -25,7 +26,8 @@ class FlightComputer:
         self.arm_length = arm_length
         self.torque_coeff = torque_coeff
         self.mass = mass
-        self.payload_threshold = payload_threshold
+        self.r_threshold = r_threshold
+        self.v_threshold = v_threshold
         self.deployed_payload = False
 
     # compute_motor_commands function
@@ -124,12 +126,16 @@ class FlightComputer:
 
     # process_payload_deployment function
     # Checks if target target payload deployment location is reached
-    def process_payload_deployment(self, sensor_readings, r_des, threshold):
+    def process_payload_deployment(self, sensor_readings, r_des, v_des, r_threshold, v_threshold):
         r_fc = sensor_readings['position'] # [x, y, z] inertial
         r_error = r_des - r_fc
-        distance = np.linalg.norm(r_error)
+        r_error_norm = np.linalg.norm(r_error)
         
-        if distance < threshold and self.deployed_payload == False:
+        v_fc = sensor_readings['velocity'] # [vx, vy, vz] inertial
+        v_error = v_des - v_fc
+        v_error_norm = np.linalg.norm(v_error)
+        
+        if (r_error_norm < r_threshold and v_error_norm < v_threshold) and self.deployed_payload == False:
             self.deployed_payload = True
             return "DEPLOY"
         else:
