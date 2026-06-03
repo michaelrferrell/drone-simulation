@@ -56,7 +56,7 @@ INERTIA = [[I_XX, I_YX, I_ZX], [I_XY, I_YY, I_ZY], [I_XZ, I_YZ, I_ZZ]]
 # Motor / propeller characteristics
 MAX_THRUST_PER_MOTOR = 8.0442
 TORQUE_COEFF         = 0.013771504
-MOTOR_LAG            = 0.162462769
+MOTOR_LAG            = 0.05
 
 # Utility blocks
 env = Environment()
@@ -85,37 +85,34 @@ vehicle = Vehicle(VEHICLE_MASS, INERTIA, R_CG, R_CP_REF)
 
 # Initial state
 initial_state = State(
-    position   = [1.2, -2.0, 1.5],
-    velocity   = [0.0, 0.0, 0.0],
+    position   = [1.2, 0.0, 1.5],
+    velocity   = [0.0, -2.0, 0.0],
     quaternion = [1.0, 0.0, 0.0, 0.0],
     omega      = [0.0, 0.0, 0.0]
 )
 
 # Flight computer
-r_start = np.asarray(initial_state.position)
-v_start = np.asarray(initial_state.velocity)
-r_end = np.array([-1.2, -4.0, 1.0]) # Payload delivery coordinates
+r_start = np.asarray(initial_state.copy().position)
+v_start = np.asarray(initial_state.copy().velocity)
+r_end = np.array([-1.2, 4.0, 1.0]) # Payload delivery coordinates
 v_end = np.array([0.0, 0.0, 0.0]) # Payload delivery target velocity
-r_return = np.array([1.2, -2.0, 1.5]) # Return coordinates for drone
+r_return = np.array([1.2, 3.0, 1.0]) # Return coordinates for drone
 r_threshold = 0.3
 v_threshold = 0.1
 t_f = 2 # Desired time to payload delivery position
-t_hover = 2 # Time maintaining payload delivery position
+t_hover = 3 # Time maintaining payload delivery position
 
-attitude_kp = np.array([[2, 0, 0],
-                        [0, 2, 0],
+attitude_kp = np.array([[3, 0, 0],
+                        [0, 3, 0],
                         [0, 0, 0.01]])
-
-attitude_kd = np.array([[0.4, 0, 0],
-                        [0, 0.4, 0],
+attitude_kd = np.array([[0.2, 0, 0],
+                        [0, 0.2, 0],
                         [0, 0, 0.01]])
-
-pos_kp = np.array([[-2, 0, 0],
-                   [0, -2, 0],
+pos_kp = np.array([[-3, 0, 0],
+                   [0, -3, 0],
                    [0, 0, -20]])
-
-pos_kd = np.array([[-5, 0, 0],
-                   [0, -5, 0],
+pos_kd = np.array([[-4, 0, 0],
+                   [0, -4, 0],
                    [0, 0, -10]])
 
 fc = FlightComputer(attitude_kp, attitude_kd, pos_kp, pos_kd, r_start, v_start, r_end, v_end, r_return, t_f, t_hover, ARM_LENGTH, TORQUE_COEFF, VEHICLE_MASS, r_threshold, v_threshold)
@@ -183,6 +180,7 @@ if plot_results:
 # ----------------------------------------------------------------------
 # ANIMATE
 # ----------------------------------------------------------------------
+
 if animate:
     waypoints = [
         ('Start',    {'pos': r_start,  'color': 'green'}),
@@ -190,6 +188,6 @@ if animate:
         ('Return',   {'pos': r_return, 'color': 'red'}),
     ]
     if export_results:
-        animate_simulation_3d(df, [df['x_des'], df['y_des'], df['z_des']], filename=r'C:\Users\micha\OneDrive\Desktop\outputs\animations\test_animation.gif', waypoints=waypoints)
+        animate_simulation_3d(df, [df['x_des'], df['y_des'], df['z_des']], filename='test_animation.gif', waypoints=waypoints)
     else:
         animate_simulation_3d(df, [df['x_des'], df['y_des'], df['z_des']], waypoints=waypoints)
