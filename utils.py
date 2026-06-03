@@ -373,8 +373,10 @@ def animate_simulation_3d(df, target_trajectory=None, filename=None, waypoints=N
         
     # Waypoints
     if waypoints is not None:
+        print(waypoints)
         for label, point in waypoints:
             x, y, z = point['pos']
+            print(x, y, z)
             ax.scatter(x, y, z, color=point['color'], marker=point.get('marker', 'o'), s=point.get('size', 80), zorder=5)
             ax.text(x, y, z, f'  {label}', color=point['color'], fontsize=8)
 
