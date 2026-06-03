@@ -391,3 +391,188 @@ def animate_simulation_3d(df, target_trajectory=None, filename=None):
         
     plt.legend()
     plt.show()
+    
+# ----------------------------------------------------------------------
+# FLIGHT DATA COMPARISON
+# ----------------------------------------------------------------------
+# Column maps - set a value to None if that data isn't available
+OUTER_LOOP_COL_MAP = {
+    "time": "t",
+    "x": "px",  "y": "py",  "z": "pz",
+    "vx": "vx", "vy": "vy", "vz": "vz",
+}
+
+INNER_LOOP_COL_MAP = {
+    "time": "t",
+    "qw": "qw", "qx": "qx", "qy": "qy", "qz": "qz",
+    "qdw": "qdw", "qdx": "qdx", "qdy": "qdy", "qdz": "qdz",
+    "p": None, "q": None, "r": None, # If direct body rate columns are available point at p, q, r and set qd* entries to None
+}
+
+# get_col function
+# Returns a Series from df using col_map, or None if the column is unavailable
+def get_col(df, col_map, key):
+    col = col_map.get(key)
+    if col is None or col not in df.columns:
+        return None
+    
+    return df[col]
+
+# sim_col function
+# Returns a numpy array for a column from the sim DataFrame, or None if missing
+def sim_col(sim_df, col):
+    if col not in sim_df.columns:
+        return None
+    
+    return sim_df[col].values
+
+# actual_col function
+# Returns a numpy array for a column from an actual flight DataFrame, or None if missing
+def actual_col(df, col):
+    if df is None or col not in df.columns:
+        return None
+    
+    return df[col].values
+
+# align_actual_time function
+# Shifts actual flight timestamps to start at the same point as the sim, plus any manual offset
+def align_actual_time(df, col_map, sim_t, time_offset):
+    t_col = col_map.get("time")
+    if df is None or t_col not in df.columns:
+        return None
+    
+    return df[t_col].values + (sim_t[0] - df[t_col].values[0]) + time_offset
+
+# draw_comparison_subplots function
+# Draws sim vs actual traces onto an existing row of axes given a list of subplot specs
+def draw_comparison_subplots(axs, sim_t, subplot_specs):
+    for ax, (title, ylabel, sim_s, actual_t, actual_s) in zip(axs, subplot_specs):
+        if sim_s is not None:
+            ax.plot(sim_t, sim_s, label="Sim", linewidth=1.5)
+            
+        if actual_s is not None and actual_t is not None:
+            ax.plot(actual_t, actual_s, label="Actual", linewidth=1.2, linestyle="--", alpha=0.85)
+            
+        ax.set_title(title, fontsize="small")
+        ax.set_ylabel(ylabel, fontsize="small")
+        ax.set_xlabel("Time (s)", fontsize="small")
+        ax.grid(True)
+        ax.legend(fontsize="x-small")
+
+# body_rates_from_qd function
+# Derives body rates p/q/r (rad/s) from quaternion derivatives
+def body_rates_from_qd(df, col_map):
+    needed = ["qw", "qx", "qy", "qz", "qdw", "qdx", "qdy", "qdz"]
+    cols = {k: get_col(df, col_map, k) for k in needed}
+    
+    if any(v is None for v in cols.values()):
+        return None
+    
+    qw  = cols["qw"].values;  qx  = cols["qx"].values
+    qy  = cols["qy"].values;  qz  = cols["qz"].values
+    qdw = cols["qdw"].values; qdx = cols["qdx"].values
+    qdy = cols["qdy"].values; qdz = cols["qdz"].values
+    
+    p = 2 * (qw*qdx - qx*qdw - qy*qdz + qz*qdy)
+    q = 2 * (qw*qdy + qx*qdz - qy*qdw - qz*qdx)
+    r = 2 * (qw*qdz - qx*qdy + qy*qdx - qz*qdw)
+    
+    return pd.DataFrame({"p": p, "q": q, "r": r})
+
+# load_and_normalise_csv function
+# Reads a CSV and re-zeros the time column from epoch to elapsed seconds if needed
+def load_and_normalise_csv(path, col_map, time_is_epoch):
+    if path is None:
+        return None
+    
+    df = pd.read_csv(path)
+    t_col = col_map.get("time")
+    
+    if t_col and t_col in df.columns and time_is_epoch:
+        df[t_col] = df[t_col] - df[t_col].iloc[0]
+        
+    return df
+
+# load_flight_data function
+# Loads outer-loop (position/velocity) and inner-loop (attitude/rates) CSVs and returns normalised DataFrames
+def load_flight_data(outer_csv=None, inner_csv=None, outer_col_map=None, inner_col_map=None, time_is_epoch=True):
+    ocm = outer_col_map or OUTER_LOOP_COL_MAP
+    icm = inner_col_map or INNER_LOOP_COL_MAP
+
+    outer = load_and_normalise_csv(outer_csv, ocm, time_is_epoch)
+    inner = load_and_normalise_csv(inner_csv, icm, time_is_epoch)
+
+    if inner is not None:
+        qcols = {k: get_col(inner, icm, k) for k in ["qw", "qx", "qy", "qz"]}
+        if all(v is not None for v in qcols.values()):
+            tmp = pd.DataFrame({k: v.values for k, v in qcols.items()})
+            inner[["roll", "pitch", "yaw"]] = tmp.apply(quat_to_euler, axis=1)
+
+        rates = body_rates_from_qd(inner, icm)
+        if rates is not None:
+            inner[["p", "q", "r"]] = rates
+
+    return {"outer": outer, "inner": inner, "ocm": ocm, "icm": icm}
+
+# plot_sim_vs_actual function
+# Plots position, velocity, attitude, and body rate comparison between flight data and simulation prediction
+def plot_sim_vs_actual(sim_df, flight_data, time_offset=0.0):
+    outer = flight_data["outer"]
+    inner = flight_data["inner"]
+    ocm   = flight_data["ocm"]
+    icm   = flight_data["icm"]
+    sim_t = sim_df["time"].values
+
+    ot = align_actual_time(outer, ocm, sim_t, time_offset)
+    it = align_actual_time(inner, icm, sim_t, time_offset)
+
+    # Euler angles from sim quaternions
+    sim_euler = None
+    if all(c in sim_df.columns for c in ["qw", "qx", "qy", "qz"]):
+        sim_euler = sim_df[["qw", "qx", "qy", "qz"]].apply(quat_to_euler, axis=1)
+        sim_euler.columns = ["roll", "pitch", "yaw"]
+
+    # Position
+    pos_fig, pos_axs = plt.subplots(1, 3, figsize=(15, 4), constrained_layout=True)
+    pos_fig.suptitle("Position: Sim vs Actual", fontsize=11)
+    draw_comparison_subplots(pos_axs, sim_t, [
+        ("X", "m",   sim_col(sim_df, "x"),  ot, actual_col(outer, "px")),
+        ("Y", "m",   sim_col(sim_df, "y"),  ot, actual_col(outer, "py")),
+        ("Z", "m",   sim_col(sim_df, "z"),  ot, actual_col(outer, "pz")),
+    ])
+
+    # Velocity
+    vel_fig, vel_axs = plt.subplots(1, 3, figsize=(15, 4), constrained_layout=True)
+    vel_fig.suptitle("Velocity: Sim vs Actual", fontsize=11)
+    draw_comparison_subplots(vel_axs, sim_t, [
+        ("Vx", "m/s", sim_col(sim_df, "vx"), ot, actual_col(outer, "vx")),
+        ("Vy", "m/s", sim_col(sim_df, "vy"), ot, actual_col(outer, "vy")),
+        ("Vz", "m/s", sim_col(sim_df, "vz"), ot, actual_col(outer, "vz")),
+    ])
+
+    # Attitude
+    att_fig, att_axs = plt.subplots(1, 3, figsize=(15, 4), constrained_layout=True)
+    att_fig.suptitle("Attitude: Sim vs Actual", fontsize=11)
+    draw_comparison_subplots(att_axs, sim_t, [
+        ("Roll",  "deg", sim_euler["roll"].values  if sim_euler is not None else None, it, actual_col(inner, "roll")),
+        ("Pitch", "deg", sim_euler["pitch"].values if sim_euler is not None else None, it, actual_col(inner, "pitch")),
+        ("Yaw",   "deg", sim_euler["yaw"].values   if sim_euler is not None else None, it, actual_col(inner, "yaw")),
+    ])
+
+    # Body rates
+    sim_p = np.degrees(sim_col(sim_df, "p")) if sim_col(sim_df, "p") is not None else None
+    sim_q = np.degrees(sim_col(sim_df, "q")) if sim_col(sim_df, "q") is not None else None
+    sim_r = np.degrees(sim_col(sim_df, "r")) if sim_col(sim_df, "r") is not None else None
+    act_p = np.degrees(actual_col(inner, "p")) if actual_col(inner, "p") is not None else None
+    act_q = np.degrees(actual_col(inner, "q")) if actual_col(inner, "q") is not None else None
+    act_r = np.degrees(actual_col(inner, "r")) if actual_col(inner, "r") is not None else None
+    rates_fig, rates_axs = plt.subplots(1, 3, figsize=(15, 4), constrained_layout=True)
+    rates_fig.suptitle("Body Rates: Sim vs Actual", fontsize=11)
+    
+    draw_comparison_subplots(rates_axs, sim_t, [
+        ("P (Roll)",  "deg/s", sim_p, it, act_p),
+        ("Q (Pitch)", "deg/s", sim_q, it, act_q),
+        ("R (Yaw)",   "deg/s", sim_r, it, act_r),
+    ])
+
+    plt.show()
