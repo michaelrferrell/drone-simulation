@@ -82,7 +82,7 @@ vehicle = Vehicle(VEHICLE_MASS, INERTIA, R_CG, R_CP_REF)
 
 # Initial state
 initial_state = State(
-    position   = [0.0, 0.0, 0.0],
+    position   = [1.2, -2.0, 1.5],
     velocity   = [0.0, 0.0, 0.0],
     quaternion = [1.0, 0.0, 0.0, 0.0],
     omega      = [0.0, 0.0, 0.0]
@@ -91,12 +91,12 @@ initial_state = State(
 # Flight computer
 r_start = np.asarray(initial_state.position)
 v_start = np.asarray(initial_state.velocity)
-r_end = np.array([10.0, 10.0, 1.0]) # Payload delivery coordinates
+r_end = np.array([-1.2, 4.0, 1.0]) # Payload delivery coordinates
 v_end = np.array([0.0, 0.0, 0.0]) # Payload delivery target velocity
-r_return = np.array([9.0, 9.0, 1.0]) # Return coordinates for drone
+r_return = np.array([1.2, -2.0, 1.5]) # Return coordinates for drone
 r_threshold = 0.3
 v_threshold = 0.1
-t_f = 5 # Desired time to payload delivery position
+t_f = 2 # Desired time to payload delivery position
 t_hover = 2 # Time maintaining payload delivery position
 
 attitude_kp = np.array([[2, 0, 0],
@@ -168,7 +168,7 @@ if export_results:
         "initial_pos": initial_state.position
     }
 
-    export_simulation_data(df, sim_metadata, r'C:\Users\micha\OneDrive\Desktop\outputs\data')
+    export_simulation_data(df, sim_metadata, r'C:\Users\micha\OneDrive\Desktop\Drone Flight Analysis')
     
 # ----------------------------------------------------------------------
 # PLOT DATA
