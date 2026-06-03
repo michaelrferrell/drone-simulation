@@ -18,9 +18,10 @@ from payload import Payload
 # CONFIGURATION
 # ----------------------------------------------------------------------
 # Exports
-plot_results = True
-animate = True
+plot_results = False
+animate = False
 export_results = False
+flight_comparison = True
 
 # Startup behaviour
 START_MODE = 'hover' # hover or freefall
@@ -180,7 +181,6 @@ if plot_results:
 # ----------------------------------------------------------------------
 # ANIMATE
 # ----------------------------------------------------------------------
-
 if animate:
     waypoints = [
         ('Start',    {'pos': r_start,  'color': 'green'}),
@@ -191,3 +191,16 @@ if animate:
         animate_simulation_3d(df, [df['x_des'], df['y_des'], df['z_des']], filename=r'C:\Users\micha\OneDrive\Desktop\outputs\animations\test_animation.gif', waypoints=waypoints)
     else:
         animate_simulation_3d(df, [df['x_des'], df['y_des'], df['z_des']], waypoints=waypoints)
+        
+# ----------------------------------------------------------------------
+# FLIGHT DATA COMPARISON
+# ---------------------------------------------------------------------- 
+if flight_comparison:
+    INNER_LOOP_CSV = r"C:\Users\micha\OneDrive\Desktop\Drone Flight Analysis\test_2026-06-02_2_inner_loop.csv"
+    OUTER_LOOP_CSV = r"C:\Users\micha\OneDrive\Desktop\Drone Flight Analysis\test_2026-06-02_2_outer_loop.csv"
+    TIME_OFFSET    = -27.5
+    DURATION       = 3.8
+
+    flight_data = load_flight_data(outer_csv=OUTER_LOOP_CSV, inner_csv=INNER_LOOP_CSV,)
+    
+    plot_sim_vs_actual(df, flight_data, time_offset=TIME_OFFSET, t_end=DURATION)

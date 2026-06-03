@@ -405,15 +405,15 @@ def animate_simulation_3d(df, target_trajectory=None, filename=None, waypoints=N
 # Column maps - set a value to None if that data isn't available
 OUTER_LOOP_COL_MAP = {
     "time": "t",
-    "x": "px",  "y": "py",  "z": "pz",
+    "x": "x",  "y": "y",  "z": "z",
     "vx": "vx", "vy": "vy", "vz": "vz",
 }
 
 INNER_LOOP_COL_MAP = {
     "time": "t",
     "qw": "qw", "qx": "qx", "qy": "qy", "qz": "qz",
-    "qdw": "qdw", "qdx": "qdx", "qdy": "qdy", "qdz": "qdz",
-    "p": None, "q": None, "r": None, # If direct body rate columns are available point at p, q, r and set qd* entries to None
+    "qdw": None, "qdx": None, "qdy": None, "qdz": None,
+    "p": "wx", "q": "wy", "r": "wz", # If direct body rate columns are available point at p, q, r and set qd* entries to None
 }
 
 # get_col function
@@ -523,7 +523,7 @@ def load_flight_data(outer_csv=None, inner_csv=None, outer_col_map=None, inner_c
 
 # plot_sim_vs_actual function
 # Plots position, velocity, attitude, and body rate comparison between flight data and simulation prediction
-def plot_sim_vs_actual(sim_df, flight_data, time_offset=0.0):
+def plot_sim_vs_actual(sim_df, flight_data, time_offset=0.0, t_start=0.0, t_end=None):
     outer = flight_data["outer"]
     inner = flight_data["inner"]
     ocm   = flight_data["ocm"]
@@ -532,7 +532,20 @@ def plot_sim_vs_actual(sim_df, flight_data, time_offset=0.0):
 
     ot = align_actual_time(outer, ocm, sim_t, time_offset)
     it = align_actual_time(inner, icm, sim_t, time_offset)
+    
+    t_end = t_end if t_end is not None else sim_t[-1]
 
+    outer_mask = (ot >= t_start) & (ot <= t_end)
+    inner_mask = (it >= t_start) & (it <= t_end)
+    sim_mask   = (sim_t >= t_start) & (sim_t <= t_end)
+
+    outer  = outer[outer_mask].reset_index(drop=True) if outer is not None else None
+    inner  = inner[inner_mask].reset_index(drop=True) if inner is not None else None
+    ot     = ot[outer_mask]
+    it     = it[inner_mask]
+    sim_t  = sim_t[sim_mask]
+    sim_df = sim_df[sim_mask].reset_index(drop=True)
+    
     # Euler angles from sim quaternions
     sim_euler = None
     if all(c in sim_df.columns for c in ["qw", "qx", "qy", "qz"]):
@@ -543,9 +556,9 @@ def plot_sim_vs_actual(sim_df, flight_data, time_offset=0.0):
     pos_fig, pos_axs = plt.subplots(1, 3, figsize=(15, 4), constrained_layout=True)
     pos_fig.suptitle("Position: Sim vs Actual", fontsize=11)
     draw_comparison_subplots(pos_axs, sim_t, [
-        ("X", "m",   sim_col(sim_df, "x"),  ot, actual_col(outer, "px")),
-        ("Y", "m",   sim_col(sim_df, "y"),  ot, actual_col(outer, "py")),
-        ("Z", "m",   sim_col(sim_df, "z"),  ot, actual_col(outer, "pz")),
+        ("X", "m",   sim_col(sim_df, "x"),  ot, get_col(outer, ocm, "x").values  if get_col(outer, ocm, "x")  is not None else None),
+        ("Y", "m",   sim_col(sim_df, "y"),  ot, get_col(outer, ocm, "y").values  if get_col(outer, ocm, "y")  is not None else None),
+        ("Z", "m",   sim_col(sim_df, "z"),  ot, get_col(outer, ocm, "z").values  if get_col(outer, ocm, "z")  is not None else None),
     ])
 
     # Velocity
@@ -570,9 +583,9 @@ def plot_sim_vs_actual(sim_df, flight_data, time_offset=0.0):
     sim_p = np.degrees(sim_col(sim_df, "p")) if sim_col(sim_df, "p") is not None else None
     sim_q = np.degrees(sim_col(sim_df, "q")) if sim_col(sim_df, "q") is not None else None
     sim_r = np.degrees(sim_col(sim_df, "r")) if sim_col(sim_df, "r") is not None else None
-    act_p = np.degrees(actual_col(inner, "p")) if actual_col(inner, "p") is not None else None
-    act_q = np.degrees(actual_col(inner, "q")) if actual_col(inner, "q") is not None else None
-    act_r = np.degrees(actual_col(inner, "r")) if actual_col(inner, "r") is not None else None
+    act_p = np.degrees(get_col(inner, icm, "p").values) if get_col(inner, icm, "p") is not None else None
+    act_q = np.degrees(get_col(inner, icm, "q").values) if get_col(inner, icm, "q") is not None else None
+    act_r = np.degrees(get_col(inner, icm, "r").values) if get_col(inner, icm, "r") is not None else None
     rates_fig, rates_axs = plt.subplots(1, 3, figsize=(15, 4), constrained_layout=True)
     rates_fig.suptitle("Body Rates: Sim vs Actual", fontsize=11)
     
