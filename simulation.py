@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 class Simulation:
-    def __init__(self, duration, dt, vehicle, propulsion, flight_computer, sensors, state, dynamics, solver, environment, payload, bounds):
+    def __init__(self, duration, dt, vehicle, propulsion, flight_computer, sensors, state, dynamics, solver, environment, payload, bounds, start_mode):
         # Simulation setup 
         self.duration = duration
         self.dt = dt
@@ -28,6 +28,9 @@ class Simulation:
         self.ground_z = bounds.get('min_z', 0.0)
         self.crash_velocity_threshold = -2.0  # (m/s)
         
+        # Startup mode
+        self.start_mode = start_mode
+        
         # Data logging container
         self.history = []
 
@@ -38,6 +41,12 @@ class Simulation:
         total_steps = int(self.duration / self.dt)
         
         print(f"Starting Simulation: {self.duration}s ({total_steps} steps)")
+        
+        # Set initial motor thrust if start_mode is set to hover
+        if self.start_mode == 'hover':
+            hover_thrust = (self.vehicle.mass * self.env.g) / len(self.prop.prop_devices)
+            for motor in self.prop.prop_devices:
+                motor.current_thrust = hover_thrust
         
         # Pre-Loop initialization (t=0)
         # Sense

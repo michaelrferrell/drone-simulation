@@ -22,6 +22,9 @@ plot_results = True
 animate = True
 export_results = False
 
+# Startup behaviour
+START_MODE = 'hover' # hover or freefall
+
 # Time
 DURATION = 15.0
 DT       = 0.01
@@ -91,7 +94,7 @@ initial_state = State(
 # Flight computer
 r_start = np.asarray(initial_state.position)
 v_start = np.asarray(initial_state.velocity)
-r_end = np.array([-1.2, 4.0, 1.0]) # Payload delivery coordinates
+r_end = np.array([-1.2, -4.0, 1.0]) # Payload delivery coordinates
 v_end = np.array([0.0, 0.0, 0.0]) # Payload delivery target velocity
 r_return = np.array([1.2, -2.0, 1.5]) # Return coordinates for drone
 r_threshold = 0.3
@@ -148,7 +151,8 @@ sim = Simulation(
     solver=rk4,
     environment=env,
     payload=payload,
-    bounds=safety_bounds
+    bounds=safety_bounds,
+    start_mode=START_MODE
 )
 
 print("Running Simulation...")
@@ -180,7 +184,12 @@ if plot_results:
 # ANIMATE
 # ----------------------------------------------------------------------
 if animate:
+    waypoints = [
+        ('Start',    {'pos': r_start,  'color': 'green'}),
+        ('Egg Drop', {'pos': r_end,    'color': 'orange'}),
+        ('Return',   {'pos': r_return, 'color': 'red'}),
+    ]
     if export_results:
-        animate_simulation_3d(df, [df['x_des'], df['y_des'], df['z_des']], filename=r'C:\Users\micha\OneDrive\Desktop\outputs\animations\test_animation.gif')
+        animate_simulation_3d(df, [df['x_des'], df['y_des'], df['z_des']], filename=r'C:\Users\micha\OneDrive\Desktop\outputs\animations\test_animation.gif', waypoints=waypoints)
     else:
-        animate_simulation_3d(df, [df['x_des'], df['y_des'], df['z_des']])
+        animate_simulation_3d(df, [df['x_des'], df['y_des'], df['z_des']], waypoints=waypoints)

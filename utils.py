@@ -337,7 +337,7 @@ def plot_simulation_results(df, max_thrust_limit=None):
     
 # animate_simulation function
 # Creates a 3D animation of the drone's flight path and orientation
-def animate_simulation_3d(df, target_trajectory=None, filename=None):
+def animate_simulation_3d(df, target_trajectory=None, filename=None, waypoints=None):
     print("Generating 3D Animation...")
     
     # Downsample data
@@ -365,11 +365,18 @@ def animate_simulation_3d(df, target_trajectory=None, filename=None):
     ax.plot_surface(xx, yy, xx*0, color='gray', alpha=0.2)
     
     ax.view_init(elev=15., azim=45)
-
+    
     # Target path
     if target_trajectory is not None:
         tx, ty, tz = target_trajectory[0], target_trajectory[1], target_trajectory[2]
         ax.plot(tx, ty, tz, 'r--', label='Target Path', linewidth=1)
+        
+    # Waypoints
+    if waypoints is not None:
+        for label, point in waypoints:
+            x, y, z = point['pos']
+            ax.scatter(x, y, z, color=point['color'], marker=point.get('marker', 'o'), s=point.get('size', 80), zorder=5)
+            ax.text(x, y, z, f'  {label}', color=point['color'], fontsize=8)
 
     # Dynamic elements (initialized empty)
     line, = ax.plot([], [], [], 'b-', linewidth=1, label='Actual Path')
