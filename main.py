@@ -188,6 +188,6 @@ if animate:
         ('Return',   {'pos': r_return, 'color': 'red'}),
     ]
     if export_results:
-        animate_simulation_3d(df, [df['x_des'], df['y_des'], df['z_des']], filename='test_animation.gif', waypoints=waypoints)
+        animate_simulation_3d(df, [df['x_des'], df['y_des'], df['z_des']], filename=r'C:\Users\micha\OneDrive\Desktop\outputs\animations\test_animation.gif', waypoints=waypoints)
     else:
         animate_simulation_3d(df, [df['x_des'], df['y_des'], df['z_des']], waypoints=waypoints)
