@@ -18,8 +18,8 @@ from payload import Payload
 # CONFIGURATION
 # ----------------------------------------------------------------------
 # Exports
-plot_results = True
-animate = True
+plot_results = False
+animate = False
 export_results = False
 flight_comparison = True
 
@@ -104,7 +104,7 @@ r_start = np.asarray(trajectory_initial_state.copy().position)
 v_start = np.asarray(trajectory_initial_state.copy().velocity)
 r_end = np.array([-1.2, 4.0, 1.0]) # Payload delivery coordinates
 v_end = np.array([0.0, 0.0, 0.0]) # Payload delivery target velocity
-r_return = np.array([1.2, 3.0, 1.0]) # Return coordinates for drone
+r_return = np.array([-1.2, 4.0, 1.0]) # Return coordinates for drone
 r_threshold = 0.08
 v_threshold = 1.0
 t_f = 2 # Desired time to payload delivery position
@@ -198,7 +198,6 @@ if animate:
     if export_results:
         animate_simulation_3d(df, [df['x_des'], df['y_des'], df['z_des']], filename='outputs/animations/test_animation.gif', waypoints=waypoints)
     else:
-
         animate_simulation_3d(df, [df['x_des'], df['y_des'], df['z_des']], waypoints=waypoints)
         
 # ----------------------------------------------------------------------
@@ -210,7 +209,13 @@ if flight_comparison:
     INNER_LOOP_TIME_OFFSET    = -27.4 # -27.4 for set 2, -49.1 for set 1
     OUTER_LOOP_TIME_OFFSET    = -27.6 # -27.6 for set 2, -49.1 for set 1
     DURATION       = 4.9
+    
+    waypoints = [
+        ('Start',    {'pos': r_start,  'color': 'green'}),
+        ('Egg Drop', {'pos': r_end,    'color': 'orange'}),
+    ]
 
     flight_data = load_flight_data(outer_csv=OUTER_LOOP_CSV, inner_csv=INNER_LOOP_CSV,)
     
-    plot_sim_vs_actual(df, flight_data, inner_time_offset= INNER_LOOP_TIME_OFFSET, outer_time_offset=OUTER_LOOP_TIME_OFFSET, t_end=DURATION)
+    plot_sim_vs_actual(df, flight_data, inner_time_offset=INNER_LOOP_TIME_OFFSET, outer_time_offset=OUTER_LOOP_TIME_OFFSET, t_end=DURATION)
+    animate_sim_vs_actual(df, flight_data, target_trajectory=[df['x_des'], df['y_des'], df['z_des']], inner_time_offset=INNER_LOOP_TIME_OFFSET, outer_time_offset=OUTER_LOOP_TIME_OFFSET, t_end=DURATION, waypoints=waypoints)
