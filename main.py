@@ -97,7 +97,7 @@ r_start = np.asarray(initial_state.copy().position)
 v_start = np.asarray(initial_state.copy().velocity)
 r_end = np.array([-1.2, 4.0, 1.0]) # Payload delivery coordinates
 v_end = np.array([0.0, 0.0, 0.0]) # Payload delivery target velocity
-r_return = np.array([1.2, 3.0, 1.0]) # Return coordinates for drone
+r_return = np.array([-1.2, 4.0, 1.0]) # Return coordinates for drone
 r_threshold = 0.3
 v_threshold = 0.1
 t_f = 2 # Desired time to payload delivery position
@@ -199,8 +199,14 @@ if flight_comparison:
     INNER_LOOP_CSV = r"C:\Users\micha\OneDrive\Desktop\Drone Flight Analysis\test_2026-06-02_2_inner_loop.csv"
     OUTER_LOOP_CSV = r"C:\Users\micha\OneDrive\Desktop\Drone Flight Analysis\test_2026-06-02_2_outer_loop.csv"
     TIME_OFFSET    = -27.5
-    DURATION       = 3.8
+    DURATION       = 3.9
+    
+    waypoints = [
+        ('Start',    {'pos': r_start,  'color': 'green'}),
+        ('Egg Drop', {'pos': r_end,    'color': 'orange'}),
+    ]
 
     flight_data = load_flight_data(outer_csv=OUTER_LOOP_CSV, inner_csv=INNER_LOOP_CSV,)
     
     plot_sim_vs_actual(df, flight_data, time_offset=TIME_OFFSET, t_end=DURATION)
+    animate_sim_vs_actual(df, flight_data, target_trajectory=[df['x_des'], df['y_des'], df['z_des']], time_offset=-27.5, t_end=DURATION, waypoints=waypoints)
