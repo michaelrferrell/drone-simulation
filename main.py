@@ -110,11 +110,11 @@ v_threshold = 1.0
 t_f = 2 # Desired time to payload delivery position
 t_hover = 3 # Time maintaining payload delivery position
 
-attitude_kp = np.array([[5, 0, 0],
-                        [0, 5, 0],
+attitude_kp = np.array([[8, 0, 0],
+                        [0, 8, 0],
                         [0, 0, 0.1]])
-attitude_kd = np.array([[0.1, 0, 0],
-                        [0, 0.1, 0],
+attitude_kd = np.array([[0.2, 0, 0],
+                        [0, 0.2, 0],
                         [0, 0, 0.01]])
 pos_kp = np.array([[-6, 0, 0],
                    [0, -6, 0],
@@ -207,9 +207,10 @@ if animate:
 if flight_comparison:
     INNER_LOOP_CSV = "flight_data/data-6-2-26-2/inner.csv"
     OUTER_LOOP_CSV = "flight_data/data-6-2-26-2/outer.csv"
-    TIME_OFFSET    = -27.6 # -27.453 for set 2, -49.1 for set 1
+    INNER_LOOP_TIME_OFFSET    = -27.4 # -27.4 for set 2, -49.1 for set 1
+    OUTER_LOOP_TIME_OFFSET    = -27.6 # -27.6 for set 2, -49.1 for set 1
     DURATION       = 4.9
 
     flight_data = load_flight_data(outer_csv=OUTER_LOOP_CSV, inner_csv=INNER_LOOP_CSV,)
     
-    plot_sim_vs_actual(df, flight_data, time_offset=TIME_OFFSET, t_end=DURATION)
+    plot_sim_vs_actual(df, flight_data, inner_time_offset= INNER_LOOP_TIME_OFFSET, outer_time_offset=OUTER_LOOP_TIME_OFFSET, t_end=DURATION)
