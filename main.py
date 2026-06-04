@@ -18,8 +18,8 @@ from payload import Payload
 # CONFIGURATION
 # ----------------------------------------------------------------------
 # Exports
-plot_results = False
-animate = False
+plot_results = True
+animate = True
 export_results = False
 flight_comparison = True
 
@@ -105,8 +105,8 @@ v_start = np.asarray(trajectory_initial_state.copy().velocity)
 r_end = np.array([-1.2, 4.0, 1.0]) # Payload delivery coordinates
 v_end = np.array([0.0, 0.0, 0.0]) # Payload delivery target velocity
 r_return = np.array([1.2, 3.0, 1.0]) # Return coordinates for drone
-r_threshold = 0.1
-v_threshold = 0.1
+r_threshold = 0.08
+v_threshold = 1.0
 t_f = 2 # Desired time to payload delivery position
 t_hover = 3 # Time maintaining payload delivery position
 
