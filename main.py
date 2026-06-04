@@ -18,9 +18,10 @@ from payload import Payload
 # CONFIGURATION
 # ----------------------------------------------------------------------
 # Exports
-plot_results = True
-animate = True
+plot_results = False
+animate = False
 export_results = False
+flight_comparison = True
 
 # Startup behaviour
 START_MODE = 'hover' # hover or freefall
@@ -56,7 +57,7 @@ INERTIA = [[I_XX, I_YX, I_ZX], [I_XY, I_YY, I_ZY], [I_XZ, I_YZ, I_ZZ]]
 # Motor / propeller characteristics
 MAX_THRUST_PER_MOTOR = 8.0442
 TORQUE_COEFF         = 0.013771504
-MOTOR_LAG            = 0.05
+MOTOR_LAG            = 0.02
 
 # Utility blocks
 env = Environment()
@@ -84,36 +85,43 @@ prop_system = Propulsion([m1, m2, m3, m4])
 vehicle = Vehicle(VEHICLE_MASS, INERTIA, R_CG, R_CP_REF)
 
 # Initial state
-initial_state = State(
+trajectory_initial_state = State(
     position   = [1.2, 0.0, 1.5],
     velocity   = [0.0, -2.0, 0.0],
     quaternion = [1.0, 0.0, 0.0, 0.0],
     omega      = [0.0, 0.0, 0.0]
 )
 
+initial_state = State(
+    position   = [1.2, 0.156, 1.444],
+    velocity   = [0.0, -1.46, 0.0],
+    quaternion = [1.0, 0.0, 0.0, 0.0],
+    omega      = [0.0, 0.0, 0.0]
+)
+
 # Flight computer
-r_start = np.asarray(initial_state.copy().position)
-v_start = np.asarray(initial_state.copy().velocity)
+r_start = np.asarray(trajectory_initial_state.copy().position)
+v_start = np.asarray(trajectory_initial_state.copy().velocity)
 r_end = np.array([-1.2, 4.0, 1.0]) # Payload delivery coordinates
 v_end = np.array([0.0, 0.0, 0.0]) # Payload delivery target velocity
 r_return = np.array([1.2, 3.0, 1.0]) # Return coordinates for drone
-r_threshold = 0.3
+r_threshold = 0.1
 v_threshold = 0.1
 t_f = 2 # Desired time to payload delivery position
 t_hover = 3 # Time maintaining payload delivery position
 
-attitude_kp = np.array([[3, 0, 0],
-                        [0, 3, 0],
+attitude_kp = np.array([[5, 0, 0],
+                        [0, 5, 0],
+                        [0, 0, 0.1]])
+attitude_kd = np.array([[0.1, 0, 0],
+                        [0, 0.1, 0],
                         [0, 0, 0.01]])
-attitude_kd = np.array([[0.2, 0, 0],
-                        [0, 0.2, 0],
-                        [0, 0, 0.01]])
-pos_kp = np.array([[-3, 0, 0],
-                   [0, -3, 0],
-                   [0, 0, -20]])
+pos_kp = np.array([[-6, 0, 0],
+                   [0, -6, 0],
+                   [0, 0, -30]])
 pos_kd = np.array([[-4, 0, 0],
                    [0, -4, 0],
-                   [0, 0, -10]])
+                   [0, 0, -25]])
 
 fc = FlightComputer(attitude_kp, attitude_kd, pos_kp, pos_kd, r_start, v_start, r_end, v_end, r_return, t_f, t_hover, ARM_LENGTH, TORQUE_COEFF, VEHICLE_MASS, r_threshold, v_threshold)
 
@@ -169,7 +177,7 @@ if export_results:
         "initial_pos": initial_state.position
     }
 
-    export_simulation_data(df, sim_metadata, r'C:\Users\micha\OneDrive\Desktop\Drone Flight Analysis')
+    export_simulation_data(df, sim_metadata, 'outputs/data')
     
 # ----------------------------------------------------------------------
 # PLOT DATA
@@ -188,6 +196,20 @@ if animate:
         ('Return',   {'pos': r_return, 'color': 'red'}),
     ]
     if export_results:
-        animate_simulation_3d(df, [df['x_des'], df['y_des'], df['z_des']], filename='test_animation.gif', waypoints=waypoints)
+        animate_simulation_3d(df, [df['x_des'], df['y_des'], df['z_des']], filename='outputs/animations/test_animation.gif', waypoints=waypoints)
     else:
+
         animate_simulation_3d(df, [df['x_des'], df['y_des'], df['z_des']], waypoints=waypoints)
+        
+# ----------------------------------------------------------------------
+# FLIGHT DATA COMPARISON
+# ---------------------------------------------------------------------- 
+if flight_comparison:
+    INNER_LOOP_CSV = "flight_data/data-6-2-26-2/inner.csv"
+    OUTER_LOOP_CSV = "flight_data/data-6-2-26-2/outer.csv"
+    TIME_OFFSET    = -27.6 # -27.453 for set 2, -49.1 for set 1
+    DURATION       = 4.9
+
+    flight_data = load_flight_data(outer_csv=OUTER_LOOP_CSV, inner_csv=INNER_LOOP_CSV,)
+    
+    plot_sim_vs_actual(df, flight_data, time_offset=TIME_OFFSET, t_end=DURATION)

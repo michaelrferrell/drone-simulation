@@ -103,7 +103,7 @@ class FlightComputer:
         M_inv = np.linalg.inv(M)
         coeffs_x = M_inv@np.array([start_state_vec_x[0], start_state_vec_x[1], start_state_vec_x[2], start_state_vec_x[3], r_des[0], 0.0, 0.0, 0.0]).T
         coeffs_y = M_inv@np.array([start_state_vec_y[0], start_state_vec_y[1], start_state_vec_y[2], start_state_vec_y[3], r_des[1], 0.0, 0.0, 0.0]).T
-        coeffs_z = M_inv@np.array([start_state_vec_z[0], start_state_vec_z[1], start_state_vec_z[2], start_state_vec_z[3], r_des[2], 0.0, 0.0, 0.0]).T
+        coeffs_z = M_inv@np.array([start_state_vec_z[0], start_state_vec_z[1], start_state_vec_z[2], start_state_vec_z[3], r_des[2], 0.2, 0.0, 0.0]).T
 
         coeffs_x = np.flip(coeffs_x)
         coeffs_y = np.flip(coeffs_y)
