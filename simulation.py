@@ -120,6 +120,9 @@ class Simulation:
             # Think
             if self.time < self.fc.t_f:
                 r_des, v_des, a_des = self.fc.compute_desired_trajectory(self.time, self.fc.t_f, self.fc.r_start, self.fc.v_start, self.fc.r_end)
+            elif self.time > self.fc.t_f and self.time < self.fc.t_f + self.fc.t_hover:
+                v_des = np.array([0, 0, 0])
+                a_des = np.array([0, 0, 0])
             elif self.time > self.fc.t_f + self.fc.t_hover:
                 r_des = self.fc.r_return
                 v_des = np.array([0, 0, 0])
