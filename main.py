@@ -18,10 +18,10 @@ from payload import Payload
 # CONFIGURATION
 # ----------------------------------------------------------------------
 # Exports
-plot_results = True
-animate = True
+plot_results = False
+animate = False
 export_results = False
-flight_comparison = False
+flight_comparison = True
 
 # Startup behaviour
 START_MODE = 'hover' # hover or freefall
@@ -198,7 +198,8 @@ if animate:
 if flight_comparison:
     INNER_LOOP_CSV = r"C:\Users\micha\OneDrive\Desktop\Drone Flight Analysis\test_2026-06-02_2_inner_loop.csv"
     OUTER_LOOP_CSV = r"C:\Users\micha\OneDrive\Desktop\Drone Flight Analysis\test_2026-06-02_2_outer_loop.csv"
-    TIME_OFFSET    = -27.5
+    INNER_LOOP_TIME_OFFSET    = -27.4 # -27.4 for set 2, -49.1 for set 1
+    OUTER_LOOP_TIME_OFFSET    = -27.6 # -27.6 for set 2, -49.1 for set 1
     DURATION       = 3.9
     
     waypoints = [
@@ -208,5 +209,5 @@ if flight_comparison:
 
     flight_data = load_flight_data(outer_csv=OUTER_LOOP_CSV, inner_csv=INNER_LOOP_CSV,)
     
-    plot_sim_vs_actual(df, flight_data, time_offset=TIME_OFFSET, t_end=DURATION)
-    animate_sim_vs_actual(df, flight_data, target_trajectory=[df['x_des'], df['y_des'], df['z_des']], time_offset=-27.5, t_end=DURATION, waypoints=waypoints)
+    plot_sim_vs_actual(df, flight_data, inner_time_offset=INNER_LOOP_TIME_OFFSET, outer_time_offset=OUTER_LOOP_TIME_OFFSET, t_end=DURATION)
+    animate_sim_vs_actual(df, flight_data, target_trajectory=[df['x_des'], df['y_des'], df['z_des']], inner_time_offset=INNER_LOOP_TIME_OFFSET, outer_time_offset=OUTER_LOOP_TIME_OFFSET, t_end=DURATION, waypoints=waypoints)

@@ -523,15 +523,15 @@ def load_flight_data(outer_csv=None, inner_csv=None, outer_col_map=None, inner_c
 
 # plot_sim_vs_actual function
 # Plots position, velocity, attitude, and body rate comparison between flight data and simulation prediction
-def plot_sim_vs_actual(sim_df, flight_data, time_offset=0.0, t_start=0.0, t_end=None):
+def plot_sim_vs_actual(sim_df, flight_data, inner_time_offset = 0.0, outer_time_offset=0.0, t_start=0.0, t_end=None):
     outer = flight_data["outer"]
     inner = flight_data["inner"]
     ocm   = flight_data["ocm"]
     icm   = flight_data["icm"]
     sim_t = sim_df["time"].values
 
-    ot = align_actual_time(outer, ocm, sim_t, time_offset)
-    it = align_actual_time(inner, icm, sim_t, time_offset)
+    ot = align_actual_time(outer, ocm, sim_t, outer_time_offset)
+    it = align_actual_time(inner, icm, sim_t, inner_time_offset)
     
     t_end = t_end if t_end is not None else sim_t[-1]
 
@@ -675,7 +675,7 @@ def update_comparison_frame(frame, sim_data, actual_data, sim_line, actual_line,
 
 # animate_sim_vs_actual function
 # Animates the simulated drone alongside the actual drone on a shared 3D axes
-def animate_sim_vs_actual(sim_df, flight_data, target_trajectory=None, time_offset=0.0, t_start=0.0, t_end=None, filename=None, waypoints=None):
+def animate_sim_vs_actual(sim_df, flight_data, target_trajectory=None, inner_time_offset = 0.0, outer_time_offset=0.0, t_start=0.0, t_end=None, filename=None, waypoints=None):
     print("Generating Sim vs Actual 3D Animation...")
 
     outer = flight_data["outer"]
@@ -685,8 +685,9 @@ def animate_sim_vs_actual(sim_df, flight_data, target_trajectory=None, time_offs
 
     # Build aligned time arrays
     sim_t  = sim_df["time"].values
-    ot     = align_actual_time(outer, ocm, sim_t, time_offset)
-    it     = align_actual_time(inner, icm, sim_t, time_offset)
+    ot     = align_actual_time(outer, ocm, sim_t, outer_time_offset)
+    it     = align_actual_time(inner, icm, sim_t, inner_time_offset)
+
 
     # Trim to window
     t_end = t_end if t_end is not None else sim_t[-1]
