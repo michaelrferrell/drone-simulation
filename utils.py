@@ -596,3 +596,199 @@ def plot_sim_vs_actual(sim_df, flight_data, time_offset=0.0, t_start=0.0, t_end=
     ])
 
     plt.show()
+    
+# update_comparison_frame function
+# Updates sim drone and actual drone body and arms for each animation frame
+def update_comparison_frame(frame, sim_data, actual_data, sim_line, actual_line, sim_body, actual_body, sim_arm_x, sim_arm_y, sim_arm_z, act_arm_x, act_arm_y, act_arm_z, arm_length, string_line, egg_marker):
+    sim_cur    = sim_data.iloc[frame]
+    actual_cur = actual_data.iloc[frame]
+
+    # Sim path history
+    sim_hist = sim_data.iloc[:frame+1]
+    sim_line.set_data(sim_hist['x'], sim_hist['y'])
+    sim_line.set_3d_properties(sim_hist['z'])
+
+    # Actual path history
+    act_hist = actual_data.iloc[:frame+1]
+    actual_line.set_data(act_hist['x'], act_hist['y'])
+    actual_line.set_3d_properties(act_hist['z'])
+
+    # Sim drone body
+    sim_body.set_data([sim_cur['x']], [sim_cur['y']])
+    sim_body.set_3d_properties([sim_cur['z']])
+
+    # Actual drone body
+    actual_body.set_data([actual_cur['x']], [actual_cur['y']])
+    actual_body.set_3d_properties([actual_cur['z']])
+
+    # Sim orientation arms
+    sim_pos = np.array([sim_cur['x'], sim_cur['y'], sim_cur['z']])
+    vec_x, vec_y, vec_z = get_orientation_vectors(sim_cur)
+
+    sim_arm_x.set_data([sim_pos[0], sim_pos[0] + vec_x[0]*arm_length], [sim_pos[1], sim_pos[1] + vec_x[1]*arm_length])
+    sim_arm_x.set_3d_properties([sim_pos[2], sim_pos[2] + vec_x[2]*arm_length])
+    sim_arm_y.set_data([sim_pos[0], sim_pos[0] + vec_y[0]*arm_length], [sim_pos[1], sim_pos[1] + vec_y[1]*arm_length])
+    sim_arm_y.set_3d_properties([sim_pos[2], sim_pos[2] + vec_y[2]*arm_length])
+    sim_arm_z.set_data([sim_pos[0], sim_pos[0] + vec_z[0]*arm_length], [sim_pos[1], sim_pos[1] + vec_z[1]*arm_length])
+    sim_arm_z.set_3d_properties([sim_pos[2], sim_pos[2] + vec_z[2]*arm_length])
+
+    # Actual orientation arms
+    act_pos = np.array([actual_cur['x'], actual_cur['y'], actual_cur['z']])
+    act_vx, act_vy, act_vz = get_orientation_vectors(actual_cur)
+
+    act_arm_x.set_data([act_pos[0], act_pos[0] + act_vx[0]*arm_length], [act_pos[1], act_pos[1] + act_vx[1]*arm_length])
+    act_arm_x.set_3d_properties([act_pos[2], act_pos[2] + act_vx[2]*arm_length])
+    act_arm_y.set_data([act_pos[0], act_pos[0] + act_vy[0]*arm_length], [act_pos[1], act_pos[1] + act_vy[1]*arm_length])
+    act_arm_y.set_3d_properties([act_pos[2], act_pos[2] + act_vy[2]*arm_length])
+    act_arm_z.set_data([act_pos[0], act_pos[0] + act_vz[0]*arm_length], [act_pos[1], act_pos[1] + act_vz[1]*arm_length])
+    act_arm_z.set_3d_properties([act_pos[2], act_pos[2] + act_vz[2]*arm_length])
+
+    # Sim payload
+    l      = sim_cur['payload_l']
+    status = sim_cur['payload_status']
+    anchor_body   = np.array([sim_cur['anchor_x'], sim_cur['anchor_y'], sim_cur['anchor_z']])
+    anchor_offset = (anchor_body[0] * np.array(vec_x) +
+                     anchor_body[1] * np.array(vec_y) +
+                     anchor_body[2] * np.array(vec_z))
+    anchor_inertial = sim_pos + anchor_offset
+
+    if status == "STOWED":
+        egg_marker.set_data([anchor_inertial[0]], [anchor_inertial[1]])
+        egg_marker.set_3d_properties([anchor_inertial[2]])
+        string_line.set_data([], [])
+        string_line.set_3d_properties([])
+    else:
+        egg_x, egg_y, egg_z = sim_cur['payload_x'], sim_cur['payload_y'], sim_cur['payload_z']
+        egg_marker.set_data([egg_x], [egg_y])
+        egg_marker.set_3d_properties([egg_z])
+        if status in ["FREEFALL", "DROPPED"]:
+            string_line.set_data([], [])
+            string_line.set_3d_properties([])
+        else:
+            string_line.set_data([anchor_inertial[0], egg_x], [anchor_inertial[1], egg_y])
+            string_line.set_3d_properties([anchor_inertial[2], egg_z])
+
+    return (sim_line, actual_line, sim_body, actual_body,
+            sim_arm_x, sim_arm_y, sim_arm_z,
+            act_arm_x, act_arm_y, act_arm_z,
+            string_line, egg_marker)
+
+# animate_sim_vs_actual function
+# Animates the simulated drone alongside the actual drone on a shared 3D axes
+def animate_sim_vs_actual(sim_df, flight_data, target_trajectory=None, time_offset=0.0, t_start=0.0, t_end=None, filename=None, waypoints=None):
+    print("Generating Sim vs Actual 3D Animation...")
+
+    outer = flight_data["outer"]
+    inner = flight_data["inner"]
+    ocm   = flight_data["ocm"]
+    icm   = flight_data["icm"]
+
+    # Build aligned time arrays
+    sim_t  = sim_df["time"].values
+    ot     = align_actual_time(outer, ocm, sim_t, time_offset)
+    it     = align_actual_time(inner, icm, sim_t, time_offset)
+
+    # Trim to window
+    t_end = t_end if t_end is not None else sim_t[-1]
+
+    sim_mask   = (sim_t >= t_start) & (sim_t <= t_end)
+    outer_mask = (ot    >= t_start) & (ot    <= t_end)
+    inner_mask = (it    >= t_start) & (it    <= t_end)
+
+    sim_df = sim_df[sim_mask].reset_index(drop=True)
+    outer  = outer[outer_mask].reset_index(drop=True)
+    inner  = inner[inner_mask].reset_index(drop=True)
+    sim_t  = sim_t[sim_mask]
+    ot     = ot[outer_mask]
+    it     = it[inner_mask]
+
+    # Interpolate actual position and attitude onto a common time axis (sim_t)
+    outer_t_col = ocm.get("time")
+    inner_t_col = icm.get("time")
+
+    actual_x  = np.interp(sim_t, ot,  outer["x"].values)
+    actual_y  = np.interp(sim_t, ot,  outer["y"].values)
+    actual_z  = np.interp(sim_t, ot,  outer["z"].values)
+    actual_qw = np.interp(sim_t, it,  inner["qw"].values)
+    actual_qx = np.interp(sim_t, it,  inner["qx"].values)
+    actual_qy = np.interp(sim_t, it,  inner["qy"].values)
+    actual_qz = np.interp(sim_t, it,  inner["qz"].values)
+
+    actual_data = pd.DataFrame({
+        "x": actual_x, "y": actual_y, "z": actual_z,
+        "qw": actual_qw, "qx": actual_qx, "qy": actual_qy, "qz": actual_qz,
+    })
+
+    # Downsample
+    skip     = 5
+    sim_data    = sim_df.iloc[::skip].reset_index(drop=True)
+    actual_data = actual_data.iloc[::skip].reset_index(drop=True)
+
+    # Axis limits from both datasets combined
+    all_x = np.concatenate([sim_data['x'].values, actual_data['x'].values])
+    all_y = np.concatenate([sim_data['y'].values, actual_data['y'].values])
+    all_z = np.concatenate([sim_data['z'].values, actual_data['z'].values])
+    margin = 1.0
+
+    fig = plt.figure(figsize=(10, 8))
+    ax  = fig.add_subplot(111, projection='3d')
+    ax.set_aspect('equal')
+    ax.set_xlim(all_x.min()-margin, all_x.max()+margin)
+    ax.set_ylim(all_y.min()-margin, all_y.max()+margin)
+    ax.set_zlim(0, all_z.max()+margin)
+    ax.set_xlabel('X (m)')
+    ax.set_ylabel('Y (m)')
+    ax.set_zlabel('Z (m)')
+    ax.set_title(f'Sim vs Actual Flight Replay (Speed: {skip}x)')
+    ax.view_init(elev=15., azim=45)
+
+    # Ground plane
+    xx, yy = np.meshgrid(np.linspace(ax.get_xlim()[0], ax.get_xlim()[1], 10),
+                         np.linspace(ax.get_ylim()[0], ax.get_ylim()[1], 10))
+    ax.plot_surface(xx, yy, xx*0, color='gray', alpha=0.2)
+    
+    # Target path
+    if target_trajectory is not None:
+        tx, ty, tz = target_trajectory[0], target_trajectory[1], target_trajectory[2]
+        ax.plot(tx, ty, tz, 'r--', label='Target Path', linewidth=1)
+        
+    # Waypoints
+    if waypoints is not None:
+        for label, point in waypoints:
+            x, y, z = point['pos']
+            ax.scatter(x, y, z, color=point['color'], marker=point.get('marker', 'o'), s=point.get('size', 80), zorder=5)
+            ax.text(x, y, z, f'  {label}', color=point['color'], fontsize=8)
+
+    # Dynamic elements — sim in blue, actual in orange
+    sim_line,    = ax.plot([], [], [], 'b-',  linewidth=1,  label='Sim Path')
+    actual_line, = ax.plot([], [], [], '-',   linewidth=1,  label='Actual Path', color='orange')
+    sim_body,    = ax.plot([], [], [], 'bo',  markersize=5)
+    actual_body, = ax.plot([], [], [], 'o',   markersize=5, color='orange')
+    sim_arm_x,   = ax.plot([], [], [], 'r-',  linewidth=2)
+    sim_arm_y,   = ax.plot([], [], [], 'g-',  linewidth=2)
+    sim_arm_z,   = ax.plot([], [], [], 'b-',  linewidth=2)
+    act_arm_x,   = ax.plot([], [], [], '-',   linewidth=2, color='#ff6666')
+    act_arm_y,   = ax.plot([], [], [], '-',   linewidth=2, color='#66cc66')
+    act_arm_z,   = ax.plot([], [], [], '-',   linewidth=2, color='#ffaa00')
+    string_line, = ax.plot([], [], [], 'k-',  linewidth=1, alpha=0.6)
+    egg_marker,  = ax.plot([], [], [], 'mo',  markersize=6, label='Egg')
+
+    update_func = partial(
+        update_comparison_frame,
+        sim_data=sim_data, actual_data=actual_data,
+        sim_line=sim_line, actual_line=actual_line,
+        sim_body=sim_body, actual_body=actual_body,
+        sim_arm_x=sim_arm_x, sim_arm_y=sim_arm_y, sim_arm_z=sim_arm_z,
+        act_arm_x=act_arm_x, act_arm_y=act_arm_y, act_arm_z=act_arm_z,
+        arm_length=0.5, string_line=string_line, egg_marker=egg_marker,
+    )
+
+    ani = animation.FuncAnimation(fig, update_func, frames=len(sim_data), interval=30, blit=False)
+
+    if filename:
+        print(f"Saving animation to {filename}...")
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        ani.save(filename, writer='ffmpeg', fps=30)
+
+    plt.legend()
+    plt.show()
