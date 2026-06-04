@@ -18,16 +18,16 @@ from payload import Payload
 # CONFIGURATION
 # ----------------------------------------------------------------------
 # Exports
-plot_results = False
-animate = False
+plot_results = True
+animate = True
 export_results = False
-flight_comparison = True
+flight_comparison = False
 
 # Startup behaviour
 START_MODE = 'hover' # hover or freefall
 
 # Time
-DURATION = 15.0
+DURATION = 6.0
 DT       = 0.01
 
 # Physical properties
@@ -185,7 +185,7 @@ if animate:
     waypoints = [
         ('Start',    {'pos': r_start,  'color': 'green'}),
         ('Egg Drop', {'pos': r_end,    'color': 'orange'}),
-        ('Return',   {'pos': r_return, 'color': 'red'}),
+        #('Return',   {'pos': r_return, 'color': 'red'}),
     ]
     if export_results:
         animate_simulation_3d(df, [df['x_des'], df['y_des'], df['z_des']], filename=r'C:\Users\micha\OneDrive\Desktop\outputs\animations\test_animation.gif', waypoints=waypoints)
